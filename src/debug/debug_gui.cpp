@@ -31,6 +31,7 @@
 #include "regs.h"
 #include "debug.h"
 #include "debug_inc.h"
+#include "debug_api.h"
 
 struct _LogGroup {
 	char const* front;
@@ -110,6 +111,7 @@ void LOG::operator() (char const* format, ...){
 	if (d_type>=LOG_MAX) return;
 	if ((d_severity!=LOG_ERROR) && (!loggrp[d_type].enabled)) return;
 	DEBUG_ShowMsg("%10u: %s:%s\n",cycle_count,loggrp[d_type].front,buf);
+	python_log(cycle_count, loggrp[d_type].front, buf);
 }
 
 

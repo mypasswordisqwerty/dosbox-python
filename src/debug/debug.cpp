@@ -29,6 +29,7 @@
 #include <sstream>
 using namespace std;
 
+#include "debug_api.h"
 #include "debug.h"
 #include "cross.h" //snprintf
 #include "cpu.h"
@@ -272,67 +273,7 @@ std::list<CDebugVar*> CDebugVar::varList;
 
 bool skipFirstInstruction = false;
 
-enum EBreakpoint { BKPNT_UNKNOWN, BKPNT_PHYSICAL, BKPNT_INTERRUPT, BKPNT_MEMORY, BKPNT_MEMORY_PROT, BKPNT_MEMORY_LINEAR };
-
 #define BPINT_ALL 0x100
-
-class CBreakpoint
-{
-public:
-
-	CBreakpoint(void);
-	void					SetAddress		(Bit16u seg, Bit32u off)	{ location = GetAddress(seg,off);	type = BKPNT_PHYSICAL; segment = seg; offset = off; };
-	void					SetAddress		(PhysPt adr)				{ location = adr;				type = BKPNT_PHYSICAL; };
-	void					SetInt			(Bit8u _intNr, Bit16u ah)	{ intNr = _intNr, ahValue = ah; type = BKPNT_INTERRUPT; };
-	void					SetOnce			(bool _once)				{ once = _once; };
-	void					SetType			(EBreakpoint _type)			{ type = _type; };
-	void					SetValue		(Bit8u value)				{ ahValue = value; };
-
-	bool					IsActive		(void)						{ return active; };
-	void					Activate		(bool _active);
-
-	EBreakpoint				GetType			(void)						{ return type; };
-	bool					GetOnce			(void)						{ return once; };
-	PhysPt					GetLocation		(void)						{ if (GetType()!=BKPNT_INTERRUPT)	return location;	else return 0; };
-	Bit16u					GetSegment		(void)						{ return segment; };
-	Bit32u					GetOffset		(void)						{ return offset; };
-	Bit8u					GetIntNr		(void)						{ if (GetType()==BKPNT_INTERRUPT)	return intNr;		else return 0; };
-	Bit16u					GetValue		(void)						{ if (GetType()!=BKPNT_PHYSICAL)	return ahValue;		else return 0; };
-
-	// statics
-	static CBreakpoint*		AddBreakpoint		(Bit16u seg, Bit32u off, bool once);
-	static CBreakpoint*		AddIntBreakpoint	(Bit8u intNum, Bit16u ah, bool once);
-	static CBreakpoint*		AddMemBreakpoint	(Bit16u seg, Bit32u off);
-	static void				ActivateBreakpoints	(PhysPt adr, bool activate);
-	static bool				CheckBreakpoint		(PhysPt adr);
-	static bool				CheckBreakpoint		(Bitu seg, Bitu off);
-	static bool				CheckIntBreakpoint	(PhysPt adr, Bit8u intNr, Bit16u ahValue);
-	static bool				IsBreakpoint		(PhysPt where);
-	static bool				IsBreakpointDrawn	(PhysPt where);
-	static bool				DeleteBreakpoint	(PhysPt where);
-	static bool				DeleteByIndex		(Bit16u index);
-	static void				DeleteAll			(void);
-	static void				ShowList			(void);
-
-
-private:
-	EBreakpoint	type;
-	// Physical
-	PhysPt		location;
-	Bit8u		oldData;
-	Bit16u		segment;
-	Bit32u		offset;
-	// Int
-	Bit8u		intNr;
-	Bit16u		ahValue;
-	// Shared
-	bool		active;
-	bool		once;
-
-	static std::list<CBreakpoint*>	BPoints;
-public:
-	static CBreakpoint*				ignoreOnce;
-};
 
 CBreakpoint::CBreakpoint(void):
 location(0),
@@ -1644,6 +1585,17 @@ Bit32u DEBUG_CheckKeys(void) {
 				ignoreAddressOnce = SegPhys(cs)+reg_eip;
 				DOSBOX_SetNormalLoop();	
 				break;
+		#ifdef C_DEBUG_SCRIPTING
+		case KEY_F(8):	// Reload scripts
+				{
+				python_shutdown();
+				std::string path;
+				Cross::CreatePlatformConfigDir(path);
+				path += "/python";
+				python_init(path.c_str());
+				}
+				break;
+		#endif
 		case KEY_F(9):	// Set/Remove Breakpoint
 				{	PhysPt ptr = GetAddress(codeViewData.cursorSeg,codeViewData.cursorOfs);
 					if (CBreakpoint::IsBreakpoint(ptr)) {
@@ -1744,6 +1696,9 @@ Bit32u DEBUG_CheckKeys(void) {
 Bitu DEBUG_Loop(void) {
 //TODO Disable sound
 	GFX_Events();
+	#ifdef C_DEBUG_SCRIPTING
+	python_ticks();
+	#endif
 	// Interrupt started ? - then skip it
 	Bit16u oldCS	= SegValue(cs);
 	Bit32u oldEIP	= reg_eip;
@@ -2116,6 +2071,9 @@ void DEBUG_SetupConsole(void) {
 }
 
 void DEBUG_ShutDown(Section * /*sec*/) {
+	#ifdef C_DEBUG_SCRIPTING
+	python_shutdown();
+	#endif
 	CBreakpoint::DeleteAll();
 	CDebugVar::DeleteAll();
 	curs_set(old_cursor_state);
@@ -2145,6 +2103,13 @@ void DEBUG_Init(Section* sec) {
 	CALLBACK_Setup(debugCallback,DEBUG_EnableDebugger,CB_RETF,"debugger");
 	/* shutdown function */
 	sec->AddDestroyFunction(&DEBUG_ShutDown);
+	/* Python initialization */
+	#ifdef C_DEBUG_SCRIPTING
+	std::string path;
+	Cross::CreatePlatformConfigDir(path);
+	path += "/python";
+	python_init(path.c_str());
+	#endif
 }
 
 // DEBUGGING VAR STUFF

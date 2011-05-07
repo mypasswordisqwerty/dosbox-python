@@ -1588,11 +1588,10 @@ Bit32u DEBUG_CheckKeys(void) {
 		#ifdef C_DEBUG_SCRIPTING
 		case KEY_F(8):	// Reload scripts
 				{
-				python_shutdown();
 				std::string path;
 				Cross::CreatePlatformConfigDir(path);
 				path += "/python";
-				python_init(path.c_str());
+				python_loadscripts(path.c_str());
 				}
 				break;
 		#endif
@@ -1696,9 +1695,6 @@ Bit32u DEBUG_CheckKeys(void) {
 Bitu DEBUG_Loop(void) {
 //TODO Disable sound
 	GFX_Events();
-	#ifdef C_DEBUG_SCRIPTING
-	python_ticks();
-	#endif
 	// Interrupt started ? - then skip it
 	Bit16u oldCS	= SegValue(cs);
 	Bit32u oldEIP	= reg_eip;
@@ -1722,6 +1718,9 @@ void DEBUG_Enable(bool pressed) {
 	SetCodeWinStart();
 	DEBUG_DrawScreen();
 	DOSBOX_SetLoop(&DEBUG_Loop);
+	#ifdef C_DEBUG_SCRIPTING
+	python_event(DBG_BREAK);
+	#endif
 	if(!showhelp) { 
 		showhelp=true;
 		DEBUG_ShowMsg("***| TYPE HELP (+ENTER) TO GET AN OVERVIEW OF ALL COMMANDS |***\n");
@@ -2108,7 +2107,7 @@ void DEBUG_Init(Section* sec) {
 	std::string path;
 	Cross::CreatePlatformConfigDir(path);
 	path += "/python";
-	python_init(path.c_str());
+	python_loadscripts(path.c_str());
 	#endif
 }
 

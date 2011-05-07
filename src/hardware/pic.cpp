@@ -26,6 +26,7 @@
 #include "pic.h"
 #include "timer.h"
 #include "setup.h"
+#include "../debug/debug_api.h"
 
 #define PIC_QUEUESIZE 512
 
@@ -535,6 +536,9 @@ void TIMER_AddTick(void) {
 	CPU_CycleLeft=CPU_CycleMax;
 	CPU_Cycles=0;
 	PIC_Ticks++;
+	#ifdef C_DEBUG_SCRIPTING
+	python_event(DBG_TICK);
+	#endif
 	/* Go through the list of scheduled events and lower their index with 1000 */
 	PICEntry * entry=pic_queue.next_entry;
 	while (entry) {

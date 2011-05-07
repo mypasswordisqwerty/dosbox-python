@@ -111,7 +111,9 @@ void LOG::operator() (char const* format, ...){
 	if (d_type>=LOG_MAX) return;
 	if ((d_severity!=LOG_ERROR) && (!loggrp[d_type].enabled)) return;
 	DEBUG_ShowMsg("%10u: %s:%s\n",cycle_count,loggrp[d_type].front,buf);
+	#ifdef C_DEBUG_SCRIPTING
 	python_log(cycle_count, loggrp[d_type].front, buf);
+	#endif
 }
 
 

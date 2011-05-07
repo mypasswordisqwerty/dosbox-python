@@ -46,47 +46,103 @@ mod.add_function('DEBUG_EnableDebugger', None, [], custom_name='EnableDebugger')
 mod.add_function('GetAddress', retval('uint32_t'),
 	[ param('uint16_t', 'seg'), param('uint32_t','offset') ])
 
-mod.header.writeln("""void _wrap_Callback(void *p);""")
-mod.body.writeln("""void _wrap_Callback(void *p) {
+mod.header.writeln("""void python_EventCb(void *p);""")
+mod.body.writeln("""void python_EventCb(void *p) {
   PyObject *callback = (PyObject*) p;
   PyObject_CallFunction(callback, NULL);
 }""")
-mod.add_function("python_register_tick_cb",
+mod.add_function("python_register_event_cb",
 	None,
-	[Parameter.new("PyCallback", "cb", callback='_wrap_Callback')],
-	custom_name='RegisterTick')
-mod.add_function("python_unregister_tick_cb",
+	[param('int','type'),Parameter.new("PyCallback", "cb", callback='python_EventCb')],
+	custom_name='ListenFor')
+mod.add_function("python_unregister_event_cb",
 	None,
-	[Parameter.new("PyCallback", "cb", callback='_wrap_Callback')],
-	custom_name='UnregisterTick')
+	[param('int','type'),Parameter.new("PyCallback", "cb", callback='python_EventCb')],
+	custom_name='DontListenFor')
+
+mod.header.writeln("""void python_ExecCb(unsigned int hash, void *p);""")
+mod.body.writeln("""void python_ExecCb(unsigned int hash, void *p) {
+  PyObject *callback = (PyObject*) p;
+  PyObject_CallFunction(callback, (char*) "I", hash);
+}""")
+mod.add_function("python_register_exec_cb",
+	None,
+	[Parameter.new("PyCallback", "cb", callback='python_ExecCb')],
+	custom_name='ListenForExec')
 
 mod.add_function('python_registers',
-	retval('PyObject*',caller_owns_return=True), [],
+	retval('PyObject*',caller_owns_return=False), [],
 	custom_name='GetRegs')
+mod.add_function('python_segments',
+	retval('PyObject*',caller_owns_return=False), [],
+	custom_name='GetSegments')
+
 mod.add_function('python_dasm',
 	retval('char*'),
 	[ param('uint16_t','seg'),param('uint32_t','ofs'),param('int','eip') ],
 	custom_name='disasm')
 
-mod.add_function('python_memory', None,
-	[ param('uint16_t','seg'),param('uint32_t','ofs'),param('uint32_t','len'),
+mod.add_function('python_getmemory', None,
+	[ param('uint32_t','loc'),param('uint32_t','len'),
 	param('std::string*','mem', direction=Parameter.DIRECTION_OUT) ],
 	custom_name='ReadMem')
+mod.add_function('python_setmemory', None,
+	[ param('uint32_t','loc'),
+	param('std::string*','mem', direction=Parameter.DIRECTION_IN) ],
+	custom_name='WriteMem')
 
-mod.header.writeln("""void _wrap_LogCb(int tick, const char *logger, char* msg, void *p);""")
-mod.body.writeln("""void _wrap_LogCb(int tick, const char *logger, char* msg, void *p) {
+mod.add_function('python_getvidmemory', None,
+	[ param('uint16_t','x'),param('uint32_t','y'),
+	param('uint16_t','w'),param('uint32_t','h'), param('uint8_t','page'),
+	param('std::string*','mem', direction=Parameter.DIRECTION_OUT) ],
+	custom_name='ReadVidMem')
+
+mod.add_function('python_setvidmemory', None,
+	[ param('uint16_t','x'),param('uint32_t','y'),
+	param('uint16_t','w'),param('uint32_t','h'), param('uint8_t','page'),
+	param('std::string*','mem', direction=Parameter.DIRECTION_IN) ],
+	custom_name='WriteVidMem')
+
+mod.add_function('python_getpalette', None,
+	[ param('std::string*','mem', direction=Parameter.DIRECTION_OUT) ],
+	custom_name='GetPalette')
+mod.add_function('python_setpalette', None,
+	[ param('std::string*','mem', direction=Parameter.DIRECTION_IN) ],
+	custom_name='SetPalette')
+
+mod.header.writeln("""void python_BreakCb(void *p);""")
+mod.body.writeln("""void python_BreakCb(void *p) {
+  PyObject *callback = (PyObject*) p;
+  PyObject_CallFunction(callback, NULL);
+}""")
+mod.add_function("python_register_break_cb",
+	None,
+	[Parameter.new("PyCallback", "cb", callback='python_BreakCb')],
+	custom_name='RegisterBreak')
+mod.add_function("python_unregister_break_cb",
+	None,
+	[Parameter.new("PyCallback", "cb", callback='python_BreakCb')],
+	custom_name='UnregisterBreak')
+
+mod.header.writeln("""void python_LogCb(int tick, const char *logger, char* msg, void *p);""")
+mod.body.writeln("""void python_LogCb(int tick, const char *logger, char* msg, void *p) {
   PyObject *callback = (PyObject*) p;
   PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg);
 }""")
 mod.add_function("python_register_log_cb",
 	None,
-	[Parameter.new("PyCallback", "cb", callback='_wrap_LogCb')],
-	custom_name='RegisterLog')
+	[Parameter.new("PyCallback", "cb", callback='python_LogCb')],
+	custom_name='ListenForLog')
 mod.add_function("python_unregister_log_cb",
 	None,
-	[Parameter.new("PyCallback", "cb", callback='_wrap_LogCb')],
-	custom_name='UnregisterLog')
+	[Parameter.new("PyCallback", "cb", callback='python_LogCb')],
+	custom_name='DontListenForLog')
 
+#s_vga_gfx = mod.add_struct('VGA_Gfx')
+#s_vga_gfx.add_instance_attribute('mode', 'int')
+#s_vga_config = mod.add_struct('VGA_Config')
+#s_vga_config.add_instance_attribute('display_start', 'int')
+#s_vga_config.add_instance_attribute('gfx', 'VGA_Gfx')
 
 klass = mod.add_class('CBreakpoint')
 klass.add_method('ShowList', None, [])
@@ -98,6 +154,10 @@ klass.add_method('IsActive', 'bool', [])
 
 mod.add_container('std::list<CBreakpoint>', retval('CBreakpoint'), 'list')
 mod.add_function('python_bpoints', retval('std::list<CBreakpoint>'), [], custom_name='GetBpoints')
+
+mod.add_function('python_vgamode', 'int', [], custom_name='VgaMode')
+
+mod.add_enum('DbgEvt',('CLEANUP','TICK','VSYNC','BREAK','RESUME'),'DBG_')
 
 mod.generate(sys.stdout)
 

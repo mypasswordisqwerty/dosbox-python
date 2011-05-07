@@ -29,6 +29,7 @@
 //#undef C_DEBUG
 //#define C_DEBUG 1
 //#define LOG(X,Y) LOG_MSG
+#include "../debug/debug_api.h"
 
 #define VGA_PARTS 4
 
@@ -827,6 +828,10 @@ static void VGA_VerticalTimer(Bitu /*val*/) {
 	//Check if we can actually render, else skip the rest (frameskip)
 	if (vga.draw.vga_override || !RENDER_StartUpdate())
 		return;
+
+	#ifdef C_DEBUG_SCRIPTING
+	python_event(DBG_VSYNC);
+	#endif
 
 	vga.draw.address_line = vga.config.hlines_skip;
 	if (IS_EGAVGA_ARCH) {

@@ -88,8 +88,10 @@ extern PyTypeObject Pystd__list__lt__CBreakpoint__gt___Type;
 extern PyTypeObject Pystd__list__lt__CBreakpoint__gt__Iter_Type;
 
 int _wrap_convert_py2c__std__list__lt___CBreakpoint___gt__(PyObject *arg, std::list<CBreakpoint> *container);
-void _wrap_Callback(void *p);
-void _wrap_LogCb(int tick, const char *logger, char* msg, void *p);
+void python_EventCb(void *p);
+void python_ExecCb(unsigned int hash, void *p);
+void python_BreakCb(void *p);
+void python_LogCb(int tick, const char *logger, char* msg, void *p);
 
 int _wrap_convert_py2c__CBreakpoint(PyObject *value, CBreakpoint *address);
 
@@ -97,16 +99,229 @@ int _wrap_convert_py2c__CBreakpoint(PyObject *value, CBreakpoint *address);
 
 
 PyObject *
-_wrap_dosboxdbg_DEBUG_EnableDebugger()
+_wrap_dosboxdbg_python_unregister_break_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
+    PyObject *cb;
+    const char *keywords[] = {"cb", NULL};
 
-    DEBUG_EnableDebugger();
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O", (char **) keywords, &cb)) {
+        return NULL;
+    }
+    if (!PyCallable_Check(cb)) {
+        PyErr_SetString(PyExc_TypeError, "visitor parameter must be callable");
+        return NULL;
+    }
+    Py_INCREF(cb);
+    python_unregister_break_cb(python_BreakCb, cb);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    Py_DECREF(cb);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_unregister_break_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_getpalette()
+{
+    PyObject *py_retval;
+    const char *mem;
+    Py_ssize_t mem_len;
+    std::string mem_std;
+
+    python_getpalette(&mem_std);
+    py_retval = Py_BuildValue((char *) "s#", (mem_std).c_str(), (mem_std).size());
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_getpalette();
+
+
+PyObject *
+_wrap_dosboxdbg_python_setvidmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    int x;
+    unsigned int y;
+    int w;
+    unsigned int h;
+    int page;
+    const char *mem;
+    Py_ssize_t mem_len;
+    std::string mem_std;
+    const char *keywords[] = {"x", "y", "w", "h", "page", "mem", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iIiIis#", (char **) keywords, &x, &y, &w, &h, &page, &mem, &mem_len)) {
+        return NULL;
+    }
+    if (x > 0xffff) {
+        PyErr_SetString(PyExc_ValueError, "Out of range");
+        return NULL;
+    }
+    if (w > 0xffff) {
+        PyErr_SetString(PyExc_ValueError, "Out of range");
+        return NULL;
+    }
+    if (page > 0xff) {
+        PyErr_SetString(PyExc_ValueError, "Out of range");
+        return NULL;
+    }
+    mem_std = std::string(mem, mem_len);
+    python_setvidmemory(x, y, w, h, page, &mem_std);
     Py_INCREF(Py_None);
     py_retval = Py_None;
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_DEBUG_EnableDebugger();
+PyObject * _wrap_dosboxdbg_python_setvidmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_vgamode()
+{
+    PyObject *py_retval;
+    int retval;
+
+    retval = python_vgamode();
+    py_retval = Py_BuildValue((char *) "i", retval);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_vgamode();
+
+
+PyObject *
+_wrap_dosboxdbg_python_getvidmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    int x;
+    unsigned int y;
+    int w;
+    unsigned int h;
+    int page;
+    const char *mem;
+    Py_ssize_t mem_len;
+    std::string mem_std;
+    const char *keywords[] = {"x", "y", "w", "h", "page", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iIiIi", (char **) keywords, &x, &y, &w, &h, &page)) {
+        return NULL;
+    }
+    if (x > 0xffff) {
+        PyErr_SetString(PyExc_ValueError, "Out of range");
+        return NULL;
+    }
+    if (w > 0xffff) {
+        PyErr_SetString(PyExc_ValueError, "Out of range");
+        return NULL;
+    }
+    if (page > 0xff) {
+        PyErr_SetString(PyExc_ValueError, "Out of range");
+        return NULL;
+    }
+    python_getvidmemory(x, y, w, h, page, &mem_std);
+    py_retval = Py_BuildValue((char *) "s#", (mem_std).c_str(), (mem_std).size());
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_getvidmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_register_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    int type;
+    PyObject *cb;
+    const char *keywords[] = {"type", "cb", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iO", (char **) keywords, &type, &cb)) {
+        return NULL;
+    }
+    if (!PyCallable_Check(cb)) {
+        PyErr_SetString(PyExc_TypeError, "visitor parameter must be callable");
+        return NULL;
+    }
+    Py_INCREF(cb);
+    python_register_event_cb(type, python_EventCb, cb);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    Py_DECREF(cb);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_register_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    int type;
+    PyObject *cb;
+    const char *keywords[] = {"type", "cb", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iO", (char **) keywords, &type, &cb)) {
+        return NULL;
+    }
+    if (!PyCallable_Check(cb)) {
+        PyErr_SetString(PyExc_TypeError, "visitor parameter must be callable");
+        return NULL;
+    }
+    Py_INCREF(cb);
+    python_unregister_event_cb(type, python_EventCb, cb);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    Py_DECREF(cb);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_setpalette(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    const char *mem;
+    Py_ssize_t mem_len;
+    std::string mem_std;
+    const char *keywords[] = {"mem", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "s#", (char **) keywords, &mem, &mem_len)) {
+        return NULL;
+    }
+    mem_std = std::string(mem, mem_len);
+    python_setpalette(&mem_std);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_setpalette(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_bpoints()
+{
+    PyObject *py_retval;
+    std::list< CBreakpoint > retval;
+    Pystd__list__lt__CBreakpoint__gt__ *py_std__list__lt__CBreakpoint__gt__;
+
+    retval = python_bpoints();
+    py_std__list__lt__CBreakpoint__gt__ = PyObject_New(Pystd__list__lt__CBreakpoint__gt__, &Pystd__list__lt__CBreakpoint__gt___Type);
+    py_std__list__lt__CBreakpoint__gt__->obj = new std::list<CBreakpoint>(retval);
+    py_retval = Py_BuildValue((char *) "N", py_std__list__lt__CBreakpoint__gt__);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_bpoints();
+
+
+PyObject *
+_wrap_dosboxdbg_python_segments()
+{
+    PyObject *py_retval;
+    PyObject *retval;
+
+    retval = python_segments();
+    py_retval = Py_BuildValue((char *) "O", retval);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_segments();
 
 
 PyObject *
@@ -124,7 +339,7 @@ _wrap_dosboxdbg_python_register_log_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObj
         return NULL;
     }
     Py_INCREF(cb);
-    python_register_log_cb(_wrap_LogCb, cb);
+    python_register_log_cb(python_LogCb, cb);
     Py_INCREF(Py_None);
     py_retval = Py_None;
     Py_DECREF(cb);
@@ -134,7 +349,7 @@ PyObject * _wrap_dosboxdbg_python_register_log_cb(PyObject * PYBINDGEN_UNUSED(du
 
 
 PyObject *
-_wrap_dosboxdbg_python_register_tick_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+_wrap_dosboxdbg_python_unregister_log_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
     PyObject *cb;
@@ -148,13 +363,26 @@ _wrap_dosboxdbg_python_register_tick_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyOb
         return NULL;
     }
     Py_INCREF(cb);
-    python_register_tick_cb(_wrap_Callback, cb);
+    python_unregister_log_cb(python_LogCb, cb);
     Py_INCREF(Py_None);
     py_retval = Py_None;
     Py_DECREF(cb);
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_python_register_tick_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+PyObject * _wrap_dosboxdbg_python_unregister_log_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_DEBUG_EnableDebugger()
+{
+    PyObject *py_retval;
+
+    DEBUG_EnableDebugger();
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_DEBUG_EnableDebugger();
 
 
 PyObject *
@@ -205,45 +433,61 @@ PyObject * _wrap_dosboxdbg_python_dasm(PyObject * PYBINDGEN_UNUSED(dummy), PyObj
 
 
 PyObject *
-_wrap_dosboxdbg_python_memory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+_wrap_dosboxdbg_python_register_exec_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
-    int seg;
-    unsigned int ofs;
+    PyObject *cb;
+    const char *keywords[] = {"cb", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O", (char **) keywords, &cb)) {
+        return NULL;
+    }
+    if (!PyCallable_Check(cb)) {
+        PyErr_SetString(PyExc_TypeError, "visitor parameter must be callable");
+        return NULL;
+    }
+    Py_INCREF(cb);
+    python_register_exec_cb(python_ExecCb, cb);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    Py_DECREF(cb);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_register_exec_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_registers()
+{
+    PyObject *py_retval;
+    PyObject *retval;
+
+    retval = python_registers();
+    py_retval = Py_BuildValue((char *) "O", retval);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_registers();
+
+
+PyObject *
+_wrap_dosboxdbg_python_getmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    unsigned int loc;
     unsigned int len;
     const char *mem;
     Py_ssize_t mem_len;
     std::string mem_std;
-    const char *keywords[] = {"seg", "ofs", "len", NULL};
+    const char *keywords[] = {"loc", "len", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iII", (char **) keywords, &seg, &ofs, &len)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "II", (char **) keywords, &loc, &len)) {
         return NULL;
     }
-    if (seg > 0xffff) {
-        PyErr_SetString(PyExc_ValueError, "Out of range");
-        return NULL;
-    }
-    python_memory(seg, ofs, len, &mem_std);
+    python_getmemory(loc, len, &mem_std);
     py_retval = Py_BuildValue((char *) "s#", (mem_std).c_str(), (mem_std).size());
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_python_memory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
-
-
-PyObject *
-_wrap_dosboxdbg_python_bpoints()
-{
-    PyObject *py_retval;
-    std::list< CBreakpoint > retval;
-    Pystd__list__lt__CBreakpoint__gt__ *py_std__list__lt__CBreakpoint__gt__;
-
-    retval = python_bpoints();
-    py_std__list__lt__CBreakpoint__gt__ = PyObject_New(Pystd__list__lt__CBreakpoint__gt__, &Pystd__list__lt__CBreakpoint__gt___Type);
-    py_std__list__lt__CBreakpoint__gt__->obj = new std::list<CBreakpoint>(retval);
-    py_retval = Py_BuildValue((char *) "N", py_std__list__lt__CBreakpoint__gt__);
-    return py_retval;
-}
-PyObject * _wrap_dosboxdbg_python_bpoints();
+PyObject * _wrap_dosboxdbg_python_getmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
 
 
 PyObject *
@@ -265,7 +509,7 @@ PyObject * _wrap_dosboxdbg_ParseCommand(PyObject * PYBINDGEN_UNUSED(dummy), PyOb
 
 
 PyObject *
-_wrap_dosboxdbg_python_unregister_log_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+_wrap_dosboxdbg_python_register_break_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
     PyObject *cb;
@@ -279,26 +523,35 @@ _wrap_dosboxdbg_python_unregister_log_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyO
         return NULL;
     }
     Py_INCREF(cb);
-    python_unregister_log_cb(_wrap_LogCb, cb);
+    python_register_break_cb(python_BreakCb, cb);
     Py_INCREF(Py_None);
     py_retval = Py_None;
     Py_DECREF(cb);
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_python_unregister_log_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+PyObject * _wrap_dosboxdbg_python_register_break_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
 
 
 PyObject *
-_wrap_dosboxdbg_python_registers()
+_wrap_dosboxdbg_python_setmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
-    PyObject *retval;
+    unsigned int loc;
+    const char *mem;
+    Py_ssize_t mem_len;
+    std::string mem_std;
+    const char *keywords[] = {"loc", "mem", NULL};
 
-    retval = python_registers();
-    py_retval = Py_BuildValue((char *) "N", retval);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "Is#", (char **) keywords, &loc, &mem, &mem_len)) {
+        return NULL;
+    }
+    mem_std = std::string(mem, mem_len);
+    python_setmemory(loc, &mem_std);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_python_registers();
+PyObject * _wrap_dosboxdbg_python_setmemory(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
 
 
 PyObject *
@@ -318,43 +571,29 @@ _wrap_dosboxdbg_DEBUG_ShowMsg(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args
 }
 PyObject * _wrap_dosboxdbg_DEBUG_ShowMsg(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
 
-
-PyObject *
-_wrap_dosboxdbg_python_unregister_tick_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
-{
-    PyObject *py_retval;
-    PyObject *cb;
-    const char *keywords[] = {"cb", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O", (char **) keywords, &cb)) {
-        return NULL;
-    }
-    if (!PyCallable_Check(cb)) {
-        PyErr_SetString(PyExc_TypeError, "visitor parameter must be callable");
-        return NULL;
-    }
-    Py_INCREF(cb);
-    python_unregister_tick_cb(_wrap_Callback, cb);
-    Py_INCREF(Py_None);
-    py_retval = Py_None;
-    Py_DECREF(cb);
-    return py_retval;
-}
-PyObject * _wrap_dosboxdbg_python_unregister_tick_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
-
 static PyMethodDef dosboxdbg_functions[] = {
+    {(char *) "UnregisterBreak", (PyCFunction) _wrap_dosboxdbg_python_unregister_break_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "GetPalette", (PyCFunction) _wrap_dosboxdbg_python_getpalette, METH_NOARGS, NULL },
+    {(char *) "WriteVidMem", (PyCFunction) _wrap_dosboxdbg_python_setvidmemory, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "VgaMode", (PyCFunction) _wrap_dosboxdbg_python_vgamode, METH_NOARGS, NULL },
+    {(char *) "ReadVidMem", (PyCFunction) _wrap_dosboxdbg_python_getvidmemory, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "ListenFor", (PyCFunction) _wrap_dosboxdbg_python_register_event_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "DontListenFor", (PyCFunction) _wrap_dosboxdbg_python_unregister_event_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "SetPalette", (PyCFunction) _wrap_dosboxdbg_python_setpalette, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "GetBpoints", (PyCFunction) _wrap_dosboxdbg_python_bpoints, METH_NOARGS, NULL },
+    {(char *) "GetSegments", (PyCFunction) _wrap_dosboxdbg_python_segments, METH_NOARGS, NULL },
+    {(char *) "ListenForLog", (PyCFunction) _wrap_dosboxdbg_python_register_log_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "DontListenForLog", (PyCFunction) _wrap_dosboxdbg_python_unregister_log_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "EnableDebugger", (PyCFunction) _wrap_dosboxdbg_DEBUG_EnableDebugger, METH_NOARGS, NULL },
-    {(char *) "RegisterLog", (PyCFunction) _wrap_dosboxdbg_python_register_log_cb, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "RegisterTick", (PyCFunction) _wrap_dosboxdbg_python_register_tick_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "GetAddress", (PyCFunction) _wrap_dosboxdbg_GetAddress, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "disasm", (PyCFunction) _wrap_dosboxdbg_python_dasm, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "ReadMem", (PyCFunction) _wrap_dosboxdbg_python_memory, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "GetBpoints", (PyCFunction) _wrap_dosboxdbg_python_bpoints, METH_NOARGS, NULL },
-    {(char *) "ParseCommand", (PyCFunction) _wrap_dosboxdbg_ParseCommand, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "UnregisterLog", (PyCFunction) _wrap_dosboxdbg_python_unregister_log_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "ListenForExec", (PyCFunction) _wrap_dosboxdbg_python_register_exec_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "GetRegs", (PyCFunction) _wrap_dosboxdbg_python_registers, METH_NOARGS, NULL },
+    {(char *) "ReadMem", (PyCFunction) _wrap_dosboxdbg_python_getmemory, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "ParseCommand", (PyCFunction) _wrap_dosboxdbg_ParseCommand, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "RegisterBreak", (PyCFunction) _wrap_dosboxdbg_python_register_break_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "WriteMem", (PyCFunction) _wrap_dosboxdbg_python_setmemory, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "ShowMsg", (PyCFunction) _wrap_dosboxdbg_DEBUG_ShowMsg, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "UnregisterTick", (PyCFunction) _wrap_dosboxdbg_python_unregister_tick_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {NULL, NULL, 0, NULL}
 };
 /* --- classes --- */
@@ -790,11 +1029,23 @@ PyTypeObject Pystd__list__lt__CBreakpoint__gt__Iter_Type = {
 };
 
 
-void _wrap_Callback(void *p) {
+/* --- enumerations --- */
+
+
+
+void python_EventCb(void *p) {
   PyObject *callback = (PyObject*) p;
   PyObject_CallFunction(callback, NULL);
 }
-void _wrap_LogCb(int tick, const char *logger, char* msg, void *p) {
+void python_ExecCb(unsigned int hash, void *p) {
+  PyObject *callback = (PyObject*) p;
+  PyObject_CallFunction(callback, (char*) "I", hash);
+}
+void python_BreakCb(void *p) {
+  PyObject *callback = (PyObject*) p;
+  PyObject_CallFunction(callback, NULL);
+}
+void python_LogCb(int tick, const char *logger, char* msg, void *p) {
   PyObject *callback = (PyObject*) p;
   PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg);
 }
@@ -825,4 +1076,9 @@ initdosboxdbg(void)
     }
     PyModule_AddObject(m, (char *) "Std__list__lt__CBreakpoint__gt__", (PyObject *) &Pystd__list__lt__CBreakpoint__gt___Type);
     PyModule_AddObject(m, (char *) "Std__list__lt__CBreakpoint__gt__Iter", (PyObject *) &Pystd__list__lt__CBreakpoint__gt__Iter_Type);
+    PyModule_AddIntConstant(m, (char *) "CLEANUP", DBG_CLEANUP);
+    PyModule_AddIntConstant(m, (char *) "TICK", DBG_TICK);
+    PyModule_AddIntConstant(m, (char *) "VSYNC", DBG_VSYNC);
+    PyModule_AddIntConstant(m, (char *) "BREAK", DBG_BREAK);
+    PyModule_AddIntConstant(m, (char *) "RESUME", DBG_RESUME);
 }

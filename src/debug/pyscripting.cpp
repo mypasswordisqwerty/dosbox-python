@@ -154,16 +154,21 @@ python_event(int evt)
 	}
 }
 
-void
+bool
 python_log(int tick, const char *logger, char *msg)
 {
+	bool ret = true;
 	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
 		PyThreadState_Swap((*itr).interpreter);
 		current_script = &(*itr);
 		map<PyLogCbWrapper,void*>::const_iterator end = current_script->log_cbs.end();
 		for (map<PyLogCbWrapper,void*>::const_iterator it = current_script->log_cbs.begin(); it != end; ++it)
-			it->first(tick, logger, msg, it->second);
+			// if any of the callbacks return False (None doesn't count),
+			// prevent normal output of the message in debug UI
+			if(!it->first(tick, logger, msg, it->second))
+				ret = false;
 	}
+	return ret;
 }
 
 void

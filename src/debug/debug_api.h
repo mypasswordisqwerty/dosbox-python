@@ -1,3 +1,4 @@
+#ifdef C_DEBUG_SCRIPTING
 #ifndef DOSBOX_DEBUG_API_H
 #define DOSBOX_DEBUG_API_H
 
@@ -41,7 +42,7 @@ typedef void (*PyVoidCb) (void *data);
 
 typedef void (*PyUIntWrap) (unsigned int uint, void *data);
 
-typedef void (*PyLogCbWrapper) (int tick, const char *logger, char *msg, void *data);
+typedef bool (*PyLogCbWrapper) (int tick, const char *logger, char *msg, void *data);
 
 map<PyVoidCb,void*> *get_callbackmap(int evt);
 
@@ -59,7 +60,7 @@ void python_init();
 int python_loadscripts(const char *sdir);
 void python_shutdown();
 void python_event(int evt);
-void python_log(int tick, const char *logger, char *msg);
+bool python_log(int tick, const char *logger, char *msg);
 void python_run(char *file);
 
 void python_register_break_cb(PyBreakCbWrapper cb, void *data);
@@ -86,4 +87,5 @@ int python_vgamode();
 
 PyMODINIT_FUNC initdosboxdbg(void);
 
+#endif
 #endif

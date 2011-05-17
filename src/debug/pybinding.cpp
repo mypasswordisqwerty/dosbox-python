@@ -57,6 +57,7 @@ typedef enum _PyBindGenWrapperFlags {
 } PyBindGenWrapperFlags;
 
 
+#include "../../config.h"
 #include "debug_api.h"
 /* --- forward declarations --- */
 
@@ -91,7 +92,7 @@ int _wrap_convert_py2c__std__list__lt___CBreakpoint___gt__(PyObject *arg, std::l
 void python_EventCb(void *p);
 void python_ExecCb(unsigned int hash, void *p);
 void python_BreakCb(void *p);
-void python_LogCb(int tick, const char *logger, char* msg, void *p);
+bool python_LogCb(int tick, const char *logger, char* msg, void *p);
 
 int _wrap_convert_py2c__CBreakpoint(PyObject *value, CBreakpoint *address);
 
@@ -1045,9 +1046,9 @@ void python_BreakCb(void *p) {
   PyObject *callback = (PyObject*) p;
   PyObject_CallFunction(callback, NULL);
 }
-void python_LogCb(int tick, const char *logger, char* msg, void *p) {
+bool python_LogCb(int tick, const char *logger, char* msg, void *p) {
   PyObject *callback = (PyObject*) p;
-  PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg);
+  return PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg) != Py_False;
 }
 
 

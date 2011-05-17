@@ -39,6 +39,7 @@ module.generate(FileCodeSink(sys.stdout))
 """
 
 mod = Module('dosboxdbg')
+mod.add_include('"../../config.h"')
 mod.add_include('"debug_api.h"')
 mod.add_function('ParseCommand', retval('bool'), [param('char*', 'str')])
 mod.add_function('DEBUG_ShowMsg', None, [param('char*', 'format')], custom_name='ShowMsg')
@@ -124,10 +125,10 @@ mod.add_function("python_unregister_break_cb",
 	[Parameter.new("PyCallback", "cb", callback='python_BreakCb')],
 	custom_name='UnregisterBreak')
 
-mod.header.writeln("""void python_LogCb(int tick, const char *logger, char* msg, void *p);""")
-mod.body.writeln("""void python_LogCb(int tick, const char *logger, char* msg, void *p) {
+mod.header.writeln("""bool python_LogCb(int tick, const char *logger, char* msg, void *p);""")
+mod.body.writeln("""bool python_LogCb(int tick, const char *logger, char* msg, void *p) {
   PyObject *callback = (PyObject*) p;
-  PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg);
+  return PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg) != Py_False;
 }""")
 mod.add_function("python_register_log_cb",
 	None,

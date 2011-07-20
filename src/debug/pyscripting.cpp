@@ -6,7 +6,7 @@
 list<t_pyscript> scripts;
 t_pyscript *current_script = NULL;
 
-char save_error_type[1024], save_error_info[1024];
+char save_error_type[1024], save_error_info[1024], exec_filename[13];
 
 void 
 PyerrorHandler()
@@ -14,6 +14,7 @@ PyerrorHandler()
    PyObject *errobj, *errdata, *errtraceback, *pystring;
  
    PyErr_Fetch(&errobj, &errdata, &errtraceback);
+   PyErr_NormalizeException(&errobj, &errdata, &errtraceback);
  
    pystring = NULL;
    if (errobj != NULL &&
@@ -34,18 +35,31 @@ PyerrorHandler()
    else
        strcpy(save_error_info, "<unknown exception data>");
    Py_XDECREF(pystring);
- 
-   DEBUG_ShowMsg("%s\n%s\n", save_error_type, save_error_info);
+
+   if(errtraceback)
+     DEBUG_ShowMsg("%s:%i %s", save_error_type, ((PyTracebackObject *) errtraceback)->tb_lineno, save_error_info);
+   else
+     DEBUG_ShowMsg("%s %s", save_error_type, save_error_info);
+
    Py_XDECREF(errobj);
    Py_XDECREF(errdata);         /* caller owns all 3 */
    Py_XDECREF(errtraceback);    /* already NULL'd out */
 }
 
+std::string
+python_getscriptdir()
+{
+	std::string path;
+	Cross::CreatePlatformConfigDir(path);
+	return path + "/python";
+}
+
 int
-python_loadscripts(const char *sdir)
+python_loadscripts(std::string path)
 {
     int i;
     bool is_dir;
+		const char *sdir = path.c_str();
     DEBUG_ShowMsg("Loading python scripts from %s", sdir);
     dir_information * dir;
     dir = open_directory(sdir);
@@ -102,9 +116,11 @@ python_init()
 		for (list<t_pyscript>::const_iterator it = scripts.begin(); it != scripts.end(); ++it) {
 			PyThreadState_Swap((*it).interpreter);
 			PyThreadState *state = PyThreadState_Get();
-			Py_EndInterpreter((*it).interpreter);
+			Py_EndInterpreter((*it).interpreter);	// sometimes causes SIGSEGV in PyImport_Cleanup
 		}
 */
+		current_script = NULL;
+		scripts.clear();
 	}
 }
 
@@ -150,8 +166,25 @@ python_event(int evt)
 			current_script->tick_cbs.clear();
 			current_script->vsync_cbs.clear();
 			current_script->break_cbs.clear();
+			current_script->breakpoint_cbs.clear();
 		}
 	}
+}
+
+bool
+python_break(CBreakpoint *bp)
+{
+	bool ret = true;
+	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
+		PyThreadState_Swap((*itr).interpreter);
+		current_script = &(*itr);
+		map<PyBreakCbWrapper,void*>::const_iterator end = current_script->breakpoint_cbs.end();
+		for (map<PyBreakCbWrapper,void*>::const_iterator it = current_script->breakpoint_cbs.begin(); it != end; ++it)
+			// if any of the callbacks return False (None doesn't count), cancel normal operation
+			if(!it->first(bp, it->second))
+				ret = false;
+	}
+	return ret;
 }
 
 bool
@@ -174,13 +207,13 @@ python_log(int tick, const char *logger, char *msg)
 void
 python_register_break_cb(PyBreakCbWrapper cb, void *p)
 {
-	current_script->break_cbs[cb] = p;
+	current_script->breakpoint_cbs[cb] = p;
 }
 
 void
 python_unregister_break_cb(PyBreakCbWrapper cb, void *p)
 {
-	current_script->break_cbs.erase(cb);
+	current_script->breakpoint_cbs.erase(cb);
 }
 
 void
@@ -213,6 +246,12 @@ void
 python_register_exec_cb(PyUIntWrap wrap, void *cb)
 {
 	current_script->exec_cb = cb;
+}
+
+void
+python_register_clicmd_cb(PyCChrWrap wrap, void *cb)
+{
+	current_script->clicmd_cb = cb;
 }
 
 PyObject*
@@ -248,6 +287,49 @@ python_dasm(Bit16u seg, Bit32u ofs, Bitu eip)
 	PhysPt ptr = GetAddress(seg,ofs);
 	Bitu size = DasmI386(dasmstr, ptr, eip, cpu.code.big);
 	return dasmstr;
+}
+
+
+PyObject*
+python_mcbs()
+{
+//	std::vector<int> addrs;
+	PyObject *dict = PyDict_New();
+	Bit16u mcb_segment = dos.firstMCB;
+	DOS_MCB mcb(mcb_segment);
+	char filename[9]; // basename=8+NUL
+	while (true) {
+		// verify that the type field is valid
+		if (mcb.GetType()!=0x4d && mcb.GetType()!=0x5a) {
+      LOG(LOG_MISC,LOG_ERROR)("MCB chain broken at %04X:0000!",mcb_segment);
+		}
+
+		mcb.GetFileName(filename);
+		switch (mcb.GetPSPSeg()) {
+			case MCB_FREE:
+			case MCB_DOS:
+				break;
+			default:
+				// get memory blocks reserved by the running binary
+				if(strlen(filename) > 0 && strncasecmp(exec_filename, filename, strlen(filename)) == 0) {
+					PyDict_SetItem(dict, Py_BuildValue("i",mcb_segment), 
+							Py_BuildValue("i",mcb.GetSize() << 4));
+				} else {
+					DEBUG_ShowMsg("%s != %s", exec_filename, filename);
+				}
+		}
+		
+    // if we've just processed the last MCB in the chain, break out of the loop
+    if (mcb.GetType()==0x5a) {
+      break;
+    }
+    // else, move to the next MCB in the chain
+    mcb_segment+=mcb.GetSize()+1;
+    mcb.SetPt(mcb_segment);
+  }
+  
+  return dict;
+  //return Py_BuildValue("{i:i}", &addrs[0]
 }
 
 void
@@ -329,13 +411,56 @@ python_setpalette(std::string *pal)
 
 int python_vgamode() { return CurMode->mode; }
 
-void python_run(char *file) {
+void
+python_insertvar(char *name, Bit32u addr)
+{
+	CDebugVar::InsertVariable(name, addr);
+}
+
+std::list<CDebugVar>
+python_vars()
+{
+	std::list<CDebugVar> ret;
+	std::list<CDebugVar*>::iterator i;
+	for(i=CDebugVar::varList.begin(); i != CDebugVar::varList.end(); i++) {
+		CDebugVar *var = (*i);
+		ret.push_back(*var);
+	}
+	return ret;
+}
+
+#include <libgen.h>
+
+void
+python_run(char *file)
+{
+	DEBUG_ShowMsg("run: %s", file);
+	strcpy(exec_filename, basename(file));
 	unsigned int hash = MurmurFile(file);
 	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
-		PyThreadState_Swap((*itr).interpreter);
 		current_script = &(*itr);
-		if(current_script->exec_cb != NULL)
+		if(current_script->exec_cb != NULL) {
+			PyThreadState_Swap(current_script->interpreter);
 			python_ExecCb(hash, current_script->exec_cb);
+		}
 	}
+}
+
+
+bool
+python_clicmd(char *cmd)
+{
+	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
+		current_script = &(*itr);
+		if(current_script->clicmd_cb != NULL) {
+			PyThreadState_Swap(current_script->interpreter);
+			if(python_CliCmdCb(cmd, current_script->clicmd_cb)) {
+				return true;
+			} else if(PyErr_Occurred() != NULL) {
+				PyerrorHandler();
+			}
+		}
+	}
+	return false;
 }
 

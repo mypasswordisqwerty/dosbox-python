@@ -74,6 +74,16 @@ extern PyTypeObject PyCBreakpoint_Type;
 
 typedef struct {
     PyObject_HEAD
+    CDebugVar *obj;
+    PyBindGenWrapperFlags flags:8;
+} PyCDebugVar;
+
+
+extern PyTypeObject PyCDebugVar_Type;
+
+
+typedef struct {
+    PyObject_HEAD
     std::list<CBreakpoint> *obj;
 } Pystd__list__lt__CBreakpoint__gt__;
 
@@ -89,12 +99,34 @@ extern PyTypeObject Pystd__list__lt__CBreakpoint__gt___Type;
 extern PyTypeObject Pystd__list__lt__CBreakpoint__gt__Iter_Type;
 
 int _wrap_convert_py2c__std__list__lt___CBreakpoint___gt__(PyObject *arg, std::list<CBreakpoint> *container);
+
+typedef struct {
+    PyObject_HEAD
+    std::list<CDebugVar> *obj;
+} Pystd__list__lt__CDebugVar__gt__;
+
+
+typedef struct {
+    PyObject_HEAD
+    Pystd__list__lt__CDebugVar__gt__ *container;
+    std::list<CDebugVar>::iterator *iterator;
+} Pystd__list__lt__CDebugVar__gt__Iter;
+
+
+extern PyTypeObject Pystd__list__lt__CDebugVar__gt___Type;
+extern PyTypeObject Pystd__list__lt__CDebugVar__gt__Iter_Type;
+
+int _wrap_convert_py2c__std__list__lt___CDebugVar___gt__(PyObject *arg, std::list<CDebugVar> *container);
 void python_EventCb(void *p);
 void python_ExecCb(unsigned int hash, void *p);
-void python_BreakCb(void *p);
+bool python_CliCmdCb(const char *cmd, void *p);
+bool python_BreakCb(CBreakpoint *bp, void *p);
 bool python_LogCb(int tick, const char *logger, char* msg, void *p);
 
 int _wrap_convert_py2c__CBreakpoint(PyObject *value, CBreakpoint *address);
+
+
+int _wrap_convert_py2c__CDebugVar(PyObject *value, CDebugVar *address);
 
 /* --- module functions --- */
 
@@ -177,16 +209,28 @@ PyObject * _wrap_dosboxdbg_python_setvidmemory(PyObject * PYBINDGEN_UNUSED(dummy
 
 
 PyObject *
-_wrap_dosboxdbg_python_vgamode()
+_wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
-    int retval;
+    int type;
+    PyObject *cb;
+    const char *keywords[] = {"type", "cb", NULL};
 
-    retval = python_vgamode();
-    py_retval = Py_BuildValue((char *) "i", retval);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iO", (char **) keywords, &type, &cb)) {
+        return NULL;
+    }
+    if (!PyCallable_Check(cb)) {
+        PyErr_SetString(PyExc_TypeError, "visitor parameter must be callable");
+        return NULL;
+    }
+    Py_INCREF(cb);
+    python_unregister_event_cb(type, python_EventCb, cb);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    Py_DECREF(cb);
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_python_vgamode();
+PyObject * _wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
 
 
 PyObject *
@@ -251,14 +295,13 @@ PyObject * _wrap_dosboxdbg_python_register_event_cb(PyObject * PYBINDGEN_UNUSED(
 
 
 PyObject *
-_wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+_wrap_dosboxdbg_python_register_clicmd_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
-    int type;
     PyObject *cb;
-    const char *keywords[] = {"type", "cb", NULL};
+    const char *keywords[] = {"cb", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "iO", (char **) keywords, &type, &cb)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O", (char **) keywords, &cb)) {
         return NULL;
     }
     if (!PyCallable_Check(cb)) {
@@ -266,13 +309,26 @@ _wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), P
         return NULL;
     }
     Py_INCREF(cb);
-    python_unregister_event_cb(type, python_EventCb, cb);
+    python_register_clicmd_cb(python_CliCmdCb, cb);
     Py_INCREF(Py_None);
     py_retval = Py_None;
     Py_DECREF(cb);
     return py_retval;
 }
-PyObject * _wrap_dosboxdbg_python_unregister_event_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+PyObject * _wrap_dosboxdbg_python_register_clicmd_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_vgamode()
+{
+    PyObject *py_retval;
+    int retval;
+
+    retval = python_vgamode();
+    py_retval = Py_BuildValue((char *) "i", retval);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_vgamode();
 
 
 PyObject *
@@ -294,22 +350,6 @@ _wrap_dosboxdbg_python_setpalette(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *
     return py_retval;
 }
 PyObject * _wrap_dosboxdbg_python_setpalette(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
-
-
-PyObject *
-_wrap_dosboxdbg_python_bpoints()
-{
-    PyObject *py_retval;
-    std::list< CBreakpoint > retval;
-    Pystd__list__lt__CBreakpoint__gt__ *py_std__list__lt__CBreakpoint__gt__;
-
-    retval = python_bpoints();
-    py_std__list__lt__CBreakpoint__gt__ = PyObject_New(Pystd__list__lt__CBreakpoint__gt__, &Pystd__list__lt__CBreakpoint__gt___Type);
-    py_std__list__lt__CBreakpoint__gt__->obj = new std::list<CBreakpoint>(retval);
-    py_retval = Py_BuildValue((char *) "N", py_std__list__lt__CBreakpoint__gt__);
-    return py_retval;
-}
-PyObject * _wrap_dosboxdbg_python_bpoints();
 
 
 PyObject *
@@ -374,6 +414,25 @@ PyObject * _wrap_dosboxdbg_python_unregister_log_cb(PyObject * PYBINDGEN_UNUSED(
 
 
 PyObject *
+_wrap_dosboxdbg_python_insertvar(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
+{
+    PyObject *py_retval;
+    char *name;
+    unsigned long addr;
+    const char *keywords[] = {"name", "addr", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "sk", (char **) keywords, &name, &addr)) {
+        return NULL;
+    }
+    python_insertvar(name, addr);
+    Py_INCREF(Py_None);
+    py_retval = Py_None;
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_insertvar(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
 _wrap_dosboxdbg_DEBUG_EnableDebugger()
 {
     PyObject *py_retval;
@@ -431,6 +490,19 @@ _wrap_dosboxdbg_python_dasm(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, 
     return py_retval;
 }
 PyObject * _wrap_dosboxdbg_python_dasm(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_mcbs()
+{
+    PyObject *py_retval;
+    PyObject *retval;
+
+    retval = python_mcbs();
+    py_retval = Py_BuildValue((char *) "O", retval);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_mcbs();
 
 
 PyObject *
@@ -492,6 +564,35 @@ PyObject * _wrap_dosboxdbg_python_getmemory(PyObject * PYBINDGEN_UNUSED(dummy), 
 
 
 PyObject *
+_wrap_dosboxdbg_python_getscriptdir()
+{
+    PyObject *py_retval;
+    std::string retval;
+
+    retval = python_getscriptdir();
+    py_retval = Py_BuildValue((char *) "s#", (retval).c_str(), (retval).size());
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_getscriptdir();
+
+
+PyObject *
+_wrap_dosboxdbg_python_vars()
+{
+    PyObject *py_retval;
+    std::list< CDebugVar > retval;
+    Pystd__list__lt__CDebugVar__gt__ *py_std__list__lt__CDebugVar__gt__;
+
+    retval = python_vars();
+    py_std__list__lt__CDebugVar__gt__ = PyObject_New(Pystd__list__lt__CDebugVar__gt__, &Pystd__list__lt__CDebugVar__gt___Type);
+    py_std__list__lt__CDebugVar__gt__->obj = new std::list<CDebugVar>(retval);
+    py_retval = Py_BuildValue((char *) "N", py_std__list__lt__CDebugVar__gt__);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_vars();
+
+
+PyObject *
 _wrap_dosboxdbg_ParseCommand(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs)
 {
     PyObject *py_retval;
@@ -531,6 +632,22 @@ _wrap_dosboxdbg_python_register_break_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyO
     return py_retval;
 }
 PyObject * _wrap_dosboxdbg_python_register_break_cb(PyObject * PYBINDGEN_UNUSED(dummy), PyObject *args, PyObject *kwargs);
+
+
+PyObject *
+_wrap_dosboxdbg_python_bpoints()
+{
+    PyObject *py_retval;
+    std::list< CBreakpoint > retval;
+    Pystd__list__lt__CBreakpoint__gt__ *py_std__list__lt__CBreakpoint__gt__;
+
+    retval = python_bpoints();
+    py_std__list__lt__CBreakpoint__gt__ = PyObject_New(Pystd__list__lt__CBreakpoint__gt__, &Pystd__list__lt__CBreakpoint__gt___Type);
+    py_std__list__lt__CBreakpoint__gt__->obj = new std::list<CBreakpoint>(retval);
+    py_retval = Py_BuildValue((char *) "N", py_std__list__lt__CBreakpoint__gt__);
+    return py_retval;
+}
+PyObject * _wrap_dosboxdbg_python_bpoints();
 
 
 PyObject *
@@ -576,23 +693,28 @@ static PyMethodDef dosboxdbg_functions[] = {
     {(char *) "UnregisterBreak", (PyCFunction) _wrap_dosboxdbg_python_unregister_break_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "GetPalette", (PyCFunction) _wrap_dosboxdbg_python_getpalette, METH_NOARGS, NULL },
     {(char *) "WriteVidMem", (PyCFunction) _wrap_dosboxdbg_python_setvidmemory, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "VgaMode", (PyCFunction) _wrap_dosboxdbg_python_vgamode, METH_NOARGS, NULL },
+    {(char *) "DontListenFor", (PyCFunction) _wrap_dosboxdbg_python_unregister_event_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "ReadVidMem", (PyCFunction) _wrap_dosboxdbg_python_getvidmemory, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "ListenFor", (PyCFunction) _wrap_dosboxdbg_python_register_event_cb, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "DontListenFor", (PyCFunction) _wrap_dosboxdbg_python_unregister_event_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "ListenForCmd", (PyCFunction) _wrap_dosboxdbg_python_register_clicmd_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "VgaMode", (PyCFunction) _wrap_dosboxdbg_python_vgamode, METH_NOARGS, NULL },
     {(char *) "SetPalette", (PyCFunction) _wrap_dosboxdbg_python_setpalette, METH_KEYWORDS|METH_VARARGS, NULL },
-    {(char *) "GetBpoints", (PyCFunction) _wrap_dosboxdbg_python_bpoints, METH_NOARGS, NULL },
     {(char *) "GetSegments", (PyCFunction) _wrap_dosboxdbg_python_segments, METH_NOARGS, NULL },
     {(char *) "ListenForLog", (PyCFunction) _wrap_dosboxdbg_python_register_log_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "DontListenForLog", (PyCFunction) _wrap_dosboxdbg_python_unregister_log_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "InsertVar", (PyCFunction) _wrap_dosboxdbg_python_insertvar, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "EnableDebugger", (PyCFunction) _wrap_dosboxdbg_DEBUG_EnableDebugger, METH_NOARGS, NULL },
     {(char *) "GetAddress", (PyCFunction) _wrap_dosboxdbg_GetAddress, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "disasm", (PyCFunction) _wrap_dosboxdbg_python_dasm, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "GetMCBs", (PyCFunction) _wrap_dosboxdbg_python_mcbs, METH_NOARGS, NULL },
     {(char *) "ListenForExec", (PyCFunction) _wrap_dosboxdbg_python_register_exec_cb, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "GetRegs", (PyCFunction) _wrap_dosboxdbg_python_registers, METH_NOARGS, NULL },
     {(char *) "ReadMem", (PyCFunction) _wrap_dosboxdbg_python_getmemory, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "GetScriptDir", (PyCFunction) _wrap_dosboxdbg_python_getscriptdir, METH_NOARGS, NULL },
+    {(char *) "GetVars", (PyCFunction) _wrap_dosboxdbg_python_vars, METH_NOARGS, NULL },
     {(char *) "ParseCommand", (PyCFunction) _wrap_dosboxdbg_ParseCommand, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "RegisterBreak", (PyCFunction) _wrap_dosboxdbg_python_register_break_cb, METH_KEYWORDS|METH_VARARGS, NULL },
+    {(char *) "GetBPs", (PyCFunction) _wrap_dosboxdbg_python_bpoints, METH_NOARGS, NULL },
     {(char *) "WriteMem", (PyCFunction) _wrap_dosboxdbg_python_setmemory, METH_KEYWORDS|METH_VARARGS, NULL },
     {(char *) "ShowMsg", (PyCFunction) _wrap_dosboxdbg_DEBUG_ShowMsg, METH_KEYWORDS|METH_VARARGS, NULL },
     {NULL, NULL, 0, NULL}
@@ -610,13 +732,25 @@ _wrap_PyCBreakpoint__tp_init(void)
 
 
 PyObject *
+_wrap_PyCBreakpoint_GetLocation(PyCBreakpoint *self)
+{
+    PyObject *py_retval;
+    unsigned long retval;
+
+    retval = self->obj->GetLocation();
+    py_retval = Py_BuildValue((char *) "k", retval);
+    return py_retval;
+}
+
+
+PyObject *
 _wrap_PyCBreakpoint_GetOffset(PyCBreakpoint *self)
 {
     PyObject *py_retval;
-    int retval;
+    unsigned long retval;
 
     retval = self->obj->GetOffset();
-    py_retval = Py_BuildValue((char *) "i", retval);
+    py_retval = Py_BuildValue((char *) "k", retval);
     return py_retval;
 }
 
@@ -681,6 +815,7 @@ _wrap_PyCBreakpoint_ShowList(PyCBreakpoint *self)
 }
 
 static PyMethodDef PyCBreakpoint_methods[] = {
+    {(char *) "GetLocation", (PyCFunction) _wrap_PyCBreakpoint_GetLocation, METH_NOARGS, NULL },
     {(char *) "GetOffset", (PyCFunction) _wrap_PyCBreakpoint_GetOffset, METH_NOARGS, NULL },
     {(char *) "GetValue", (PyCFunction) _wrap_PyCBreakpoint_GetValue, METH_NOARGS, NULL },
     {(char *) "GetIntNr", (PyCFunction) _wrap_PyCBreakpoint_GetIntNr, METH_NOARGS, NULL },
@@ -773,6 +908,213 @@ PyTypeObject PyCBreakpoint_Type = {
     (descrsetfunc)NULL,    /* tp_descr_set */
     0,                 /* tp_dictoffset */
     (initproc)_wrap_PyCBreakpoint__tp_init,             /* tp_init */
+    (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
+    (newfunc)PyType_GenericNew,               /* tp_new */
+    (freefunc)0,             /* tp_free */
+    (inquiry)NULL,             /* tp_is_gc */
+    NULL,                              /* tp_bases */
+    NULL,                              /* tp_mro */
+    NULL,                              /* tp_cache */
+    NULL,                              /* tp_subclasses */
+    NULL,                              /* tp_weaklist */
+    (destructor) NULL                  /* tp_del */
+};
+
+
+
+
+
+static int
+_wrap_PyCDebugVar__tp_init__0(PyCDebugVar *self, PyObject *args, PyObject *kwargs, PyObject **return_exception)
+{
+    PyCDebugVar *ctor_arg;
+    const char *keywords[] = {"ctor_arg", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "O!", (char **) keywords, &PyCDebugVar_Type, &ctor_arg)) {
+        {
+            PyObject *exc_type, *traceback;
+            PyErr_Fetch(&exc_type, return_exception, &traceback);
+            Py_XDECREF(exc_type);
+            Py_XDECREF(traceback);
+        }
+        return -1;
+    }
+    self->obj = new CDebugVar(*((PyCDebugVar *) ctor_arg)->obj);
+    self->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    return 0;
+}
+
+static int
+_wrap_PyCDebugVar__tp_init__1(PyCDebugVar *self, PyObject *args, PyObject *kwargs, PyObject **return_exception)
+{
+    char *name;
+    unsigned long addr;
+    const char *keywords[] = {"name", "addr", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "sk", (char **) keywords, &name, &addr)) {
+        {
+            PyObject *exc_type, *traceback;
+            PyErr_Fetch(&exc_type, return_exception, &traceback);
+            Py_XDECREF(exc_type);
+            Py_XDECREF(traceback);
+        }
+        return -1;
+    }
+    self->obj = new CDebugVar(name, addr);
+    self->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    return 0;
+}
+
+int _wrap_PyCDebugVar__tp_init(PyCDebugVar *self, PyObject *args, PyObject *kwargs)
+{
+    int retval;
+    PyObject *error_list;
+    PyObject *exceptions[2] = {0,};
+    retval = _wrap_PyCDebugVar__tp_init__0(self, args, kwargs, &exceptions[0]);
+    if (!exceptions[0]) {
+        return retval;
+    }
+    retval = _wrap_PyCDebugVar__tp_init__1(self, args, kwargs, &exceptions[1]);
+    if (!exceptions[1]) {
+        Py_DECREF(exceptions[0]);
+        return retval;
+    }
+    error_list = PyList_New(2);
+    PyList_SET_ITEM(error_list, 0, PyObject_Str(exceptions[0]));
+    Py_DECREF(exceptions[0]);
+    PyList_SET_ITEM(error_list, 1, PyObject_Str(exceptions[1]));
+    Py_DECREF(exceptions[1]);
+    PyErr_SetObject(PyExc_TypeError, error_list);
+    Py_DECREF(error_list);
+    return -1;
+}
+
+
+PyObject *
+_wrap_PyCDebugVar_GetName(PyCDebugVar *self)
+{
+    PyObject *py_retval;
+    char *retval;
+
+    retval = self->obj->GetName();
+    py_retval = Py_BuildValue((char *) "s", retval);
+    return py_retval;
+}
+
+
+PyObject *
+_wrap_PyCDebugVar_GetAdr(PyCDebugVar *self)
+{
+    PyObject *py_retval;
+    unsigned long retval;
+
+    retval = self->obj->GetAdr();
+    py_retval = Py_BuildValue((char *) "k", retval);
+    return py_retval;
+}
+
+
+static PyObject*
+_wrap_PyCDebugVar__copy__(PyCDebugVar *self)
+{
+
+    PyCDebugVar *py_copy;
+    py_copy = PyObject_New(PyCDebugVar, &PyCDebugVar_Type);
+    py_copy->obj = new CDebugVar(*self->obj);
+    py_copy->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    return (PyObject*) py_copy;
+}
+
+static PyMethodDef PyCDebugVar_methods[] = {
+    {(char *) "GetName", (PyCFunction) _wrap_PyCDebugVar_GetName, METH_NOARGS, NULL },
+    {(char *) "GetAdr", (PyCFunction) _wrap_PyCDebugVar_GetAdr, METH_NOARGS, NULL },
+    {(char *) "__copy__", (PyCFunction) _wrap_PyCDebugVar__copy__, METH_NOARGS, NULL},
+    {NULL, NULL, 0, NULL}
+};
+
+static void
+_wrap_PyCDebugVar__tp_dealloc(PyCDebugVar *self)
+{
+        CDebugVar *tmp = self->obj;
+        self->obj = NULL;
+        if (!(self->flags&PYBINDGEN_WRAPPER_FLAG_OBJECT_NOT_OWNED)) {
+            delete tmp;
+        }
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject*
+_wrap_PyCDebugVar__tp_richcompare (PyCDebugVar *PYBINDGEN_UNUSED(self), PyCDebugVar *other, int opid)
+{
+
+    if (!PyObject_IsInstance((PyObject*) other, (PyObject*) &PyCDebugVar_Type)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    switch (opid)
+    {
+    case Py_LT:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_LE:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_EQ:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_NE:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_GE:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    case Py_GT:
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    } /* closes switch (opid) */
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+}
+
+PyTypeObject PyCDebugVar_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,                                 /* ob_size */
+    (char *) "dosboxdbg.CDebugVar",            /* tp_name */
+    sizeof(PyCDebugVar),                  /* tp_basicsize */
+    0,                                 /* tp_itemsize */
+    /* methods */
+    (destructor)_wrap_PyCDebugVar__tp_dealloc,        /* tp_dealloc */
+    (printfunc)0,                      /* tp_print */
+    (getattrfunc)NULL,       /* tp_getattr */
+    (setattrfunc)NULL,       /* tp_setattr */
+    (cmpfunc)NULL,           /* tp_compare */
+    (reprfunc)NULL,             /* tp_repr */
+    (PyNumberMethods*)NULL,     /* tp_as_number */
+    (PySequenceMethods*)NULL, /* tp_as_sequence */
+    (PyMappingMethods*)NULL,   /* tp_as_mapping */
+    (hashfunc)NULL,             /* tp_hash */
+    (ternaryfunc)NULL,          /* tp_call */
+    (reprfunc)NULL,              /* tp_str */
+    (getattrofunc)NULL,     /* tp_getattro */
+    (setattrofunc)NULL,     /* tp_setattro */
+    (PyBufferProcs*)NULL,  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                      /* tp_flags */
+    NULL,                        /* Documentation string */
+    (traverseproc)NULL,     /* tp_traverse */
+    (inquiry)NULL,             /* tp_clear */
+    (richcmpfunc)_wrap_PyCDebugVar__tp_richcompare,   /* tp_richcompare */
+    0,             /* tp_weaklistoffset */
+    (getiterfunc)NULL,          /* tp_iter */
+    (iternextfunc)NULL,     /* tp_iternext */
+    (struct PyMethodDef*)PyCDebugVar_methods, /* tp_methods */
+    (struct PyMemberDef*)0,              /* tp_members */
+    0,                     /* tp_getset */
+    NULL,                              /* tp_base */
+    NULL,                              /* tp_dict */
+    (descrgetfunc)NULL,    /* tp_descr_get */
+    (descrsetfunc)NULL,    /* tp_descr_set */
+    0,                 /* tp_dictoffset */
+    (initproc)_wrap_PyCDebugVar__tp_init,             /* tp_init */
     (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
     (newfunc)PyType_GenericNew,               /* tp_new */
     (freefunc)0,             /* tp_free */
@@ -1030,6 +1372,248 @@ PyTypeObject Pystd__list__lt__CBreakpoint__gt__Iter_Type = {
 };
 
 
+
+
+static void
+Pystd__list__lt__CDebugVar__gt__Iter__tp_clear(Pystd__list__lt__CDebugVar__gt__Iter *self)
+{
+    Py_CLEAR(self->container);
+    delete self->iterator;
+    self->iterator = NULL;
+
+}
+
+
+static int
+Pystd__list__lt__CDebugVar__gt__Iter__tp_traverse(Pystd__list__lt__CDebugVar__gt__Iter *self, visitproc visit, void *arg)
+{
+    Py_VISIT((PyObject *) self->container);
+    return 0;
+}
+
+
+static void
+_wrap_Pystd__list__lt__CDebugVar__gt____tp_dealloc(Pystd__list__lt__CDebugVar__gt__ *self)
+{
+    delete self->obj;
+    self->obj = NULL;
+
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+
+static void
+_wrap_Pystd__list__lt__CDebugVar__gt__Iter__tp_dealloc(Pystd__list__lt__CDebugVar__gt__Iter *self)
+{
+    Py_CLEAR(self->container);
+    delete self->iterator;
+    self->iterator = NULL;
+
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+
+static PyObject*
+_wrap_Pystd__list__lt__CDebugVar__gt____tp_iter(Pystd__list__lt__CDebugVar__gt__ *self)
+{
+    Pystd__list__lt__CDebugVar__gt__Iter *iter = PyObject_GC_New(Pystd__list__lt__CDebugVar__gt__Iter, &Pystd__list__lt__CDebugVar__gt__Iter_Type);
+    Py_INCREF(self);
+    iter->container = self;
+    iter->iterator = new std::list<CDebugVar>::iterator(self->obj->begin());
+    return (PyObject*) iter;
+}
+
+
+static PyObject*
+_wrap_Pystd__list__lt__CDebugVar__gt__Iter__tp_iter(Pystd__list__lt__CDebugVar__gt__Iter *self)
+{
+    Py_INCREF(self);
+    return (PyObject*) self;
+}
+
+static PyObject* _wrap_Pystd__list__lt__CDebugVar__gt__Iter__tp_iternext(Pystd__list__lt__CDebugVar__gt__Iter *self)
+{
+    PyObject *py_retval;
+    std::list<CDebugVar>::iterator iter;
+    PyCDebugVar *py_CDebugVar;
+
+    iter = *self->iterator;
+    if (iter == self->container->obj->end()) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+    ++(*self->iterator);
+    py_CDebugVar = PyObject_New(PyCDebugVar, &PyCDebugVar_Type);
+    py_CDebugVar->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+    py_CDebugVar->obj = new CDebugVar((*iter));
+    py_retval = Py_BuildValue((char *) "N", py_CDebugVar);
+    return py_retval;
+}
+
+int _wrap_convert_py2c__CDebugVar(PyObject *value, CDebugVar *address)
+{
+    PyObject *py_retval;
+    PyCDebugVar *tmp_CDebugVar;
+
+    py_retval = Py_BuildValue((char *) "(O)", value);
+    if (!PyArg_ParseTuple(py_retval, (char *) "O!", &PyCDebugVar_Type, &tmp_CDebugVar)) {
+        Py_DECREF(py_retval);
+        return 0;
+    }
+    *address = *tmp_CDebugVar->obj;
+    Py_DECREF(py_retval);
+    return 1;
+}
+
+
+int _wrap_convert_py2c__std__list__lt___CDebugVar___gt__(PyObject *arg, std::list<CDebugVar> *container)
+{
+    if (PyObject_IsInstance(arg, (PyObject*) &Pystd__list__lt__CDebugVar__gt___Type)) {
+        *container = *((Pystd__list__lt__CDebugVar__gt__*)arg)->obj;
+    } else if (PyList_Check(arg)) {
+        container->clear();
+        Py_ssize_t size = PyList_Size(arg);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            CDebugVar item;
+            if (!_wrap_convert_py2c__CDebugVar(PyList_GET_ITEM(arg, i), &item)) {
+                return 0;
+            }
+            container->push_back(item);
+        }
+    } else {
+        PyErr_SetString(PyExc_TypeError, "parameter must be None, a Std__list__lt__CDebugVar__gt__ instance, or a list of CDebugVar");
+        return 0;
+    }
+    return 1;
+}
+
+
+static int
+_wrap_Pystd__list__lt__CDebugVar__gt____tp_init(Pystd__list__lt__CDebugVar__gt__ *self, PyObject *args, PyObject *kwargs)
+{
+    const char *keywords[] = {"arg", NULL};
+    PyObject *arg = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, (char *) "|O", (char **) keywords, &arg)) {
+        return -1;
+    }
+
+    self->obj = new std::list<CDebugVar>;
+
+    if (arg == NULL)
+        return 0;
+
+    if (!_wrap_convert_py2c__std__list__lt___CDebugVar___gt__(arg, self->obj)) {
+        delete self->obj;
+        self->obj = NULL;
+        return -1;
+    }
+    return 0;
+}
+
+PyTypeObject Pystd__list__lt__CDebugVar__gt___Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,                                 /* ob_size */
+    (char *) "dosboxdbg.Std__list__lt__CDebugVar__gt__",            /* tp_name */
+    sizeof(Pystd__list__lt__CDebugVar__gt__),                  /* tp_basicsize */
+    0,                                 /* tp_itemsize */
+    /* methods */
+    (destructor)_wrap_Pystd__list__lt__CDebugVar__gt____tp_dealloc,        /* tp_dealloc */
+    (printfunc)0,                      /* tp_print */
+    (getattrfunc)NULL,       /* tp_getattr */
+    (setattrfunc)NULL,       /* tp_setattr */
+    (cmpfunc)NULL,           /* tp_compare */
+    (reprfunc)NULL,             /* tp_repr */
+    (PyNumberMethods*)NULL,     /* tp_as_number */
+    (PySequenceMethods*)NULL, /* tp_as_sequence */
+    (PyMappingMethods*)NULL,   /* tp_as_mapping */
+    (hashfunc)NULL,             /* tp_hash */
+    (ternaryfunc)NULL,          /* tp_call */
+    (reprfunc)NULL,              /* tp_str */
+    (getattrofunc)NULL,     /* tp_getattro */
+    (setattrofunc)NULL,     /* tp_setattro */
+    (PyBufferProcs*)NULL,  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                      /* tp_flags */
+    NULL,                        /* Documentation string */
+    (traverseproc)NULL,     /* tp_traverse */
+    (inquiry)NULL,             /* tp_clear */
+    (richcmpfunc)NULL,   /* tp_richcompare */
+    0,             /* tp_weaklistoffset */
+    (getiterfunc)_wrap_Pystd__list__lt__CDebugVar__gt____tp_iter,          /* tp_iter */
+    (iternextfunc)NULL,     /* tp_iternext */
+    (struct PyMethodDef*)NULL, /* tp_methods */
+    (struct PyMemberDef*)0,              /* tp_members */
+    NULL,                     /* tp_getset */
+    NULL,                              /* tp_base */
+    NULL,                              /* tp_dict */
+    (descrgetfunc)NULL,    /* tp_descr_get */
+    (descrsetfunc)NULL,    /* tp_descr_set */
+    0,                 /* tp_dictoffset */
+    (initproc)_wrap_Pystd__list__lt__CDebugVar__gt____tp_init,             /* tp_init */
+    (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
+    (newfunc)PyType_GenericNew,               /* tp_new */
+    (freefunc)0,             /* tp_free */
+    (inquiry)NULL,             /* tp_is_gc */
+    NULL,                              /* tp_bases */
+    NULL,                              /* tp_mro */
+    NULL,                              /* tp_cache */
+    NULL,                              /* tp_subclasses */
+    NULL,                              /* tp_weaklist */
+    (destructor) NULL                  /* tp_del */
+};
+
+PyTypeObject Pystd__list__lt__CDebugVar__gt__Iter_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,                                 /* ob_size */
+    (char *) "dosboxdbg.Std__list__lt__CDebugVar__gt__Iter",            /* tp_name */
+    sizeof(Pystd__list__lt__CDebugVar__gt__Iter),                  /* tp_basicsize */
+    0,                                 /* tp_itemsize */
+    /* methods */
+    (destructor)_wrap_Pystd__list__lt__CDebugVar__gt__Iter__tp_dealloc,        /* tp_dealloc */
+    (printfunc)0,                      /* tp_print */
+    (getattrfunc)NULL,       /* tp_getattr */
+    (setattrfunc)NULL,       /* tp_setattr */
+    (cmpfunc)NULL,           /* tp_compare */
+    (reprfunc)NULL,             /* tp_repr */
+    (PyNumberMethods*)NULL,     /* tp_as_number */
+    (PySequenceMethods*)NULL, /* tp_as_sequence */
+    (PyMappingMethods*)NULL,   /* tp_as_mapping */
+    (hashfunc)NULL,             /* tp_hash */
+    (ternaryfunc)NULL,          /* tp_call */
+    (reprfunc)NULL,              /* tp_str */
+    (getattrofunc)NULL,     /* tp_getattro */
+    (setattrofunc)NULL,     /* tp_setattro */
+    (PyBufferProcs*)NULL,  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,                      /* tp_flags */
+    NULL,                        /* Documentation string */
+    (traverseproc)Pystd__list__lt__CDebugVar__gt__Iter__tp_traverse,     /* tp_traverse */
+    (inquiry)Pystd__list__lt__CDebugVar__gt__Iter__tp_clear,             /* tp_clear */
+    (richcmpfunc)NULL,   /* tp_richcompare */
+    0,             /* tp_weaklistoffset */
+    (getiterfunc)_wrap_Pystd__list__lt__CDebugVar__gt__Iter__tp_iter,          /* tp_iter */
+    (iternextfunc)_wrap_Pystd__list__lt__CDebugVar__gt__Iter__tp_iternext,     /* tp_iternext */
+    (struct PyMethodDef*)NULL, /* tp_methods */
+    (struct PyMemberDef*)0,              /* tp_members */
+    NULL,                     /* tp_getset */
+    NULL,                              /* tp_base */
+    NULL,                              /* tp_dict */
+    (descrgetfunc)NULL,    /* tp_descr_get */
+    (descrsetfunc)NULL,    /* tp_descr_set */
+    0,                 /* tp_dictoffset */
+    (initproc)NULL,             /* tp_init */
+    (allocfunc)PyType_GenericAlloc,           /* tp_alloc */
+    (newfunc)PyType_GenericNew,               /* tp_new */
+    (freefunc)0,             /* tp_free */
+    (inquiry)NULL,             /* tp_is_gc */
+    NULL,                              /* tp_bases */
+    NULL,                              /* tp_mro */
+    NULL,                              /* tp_cache */
+    NULL,                              /* tp_subclasses */
+    NULL,                              /* tp_weaklist */
+    (destructor) NULL                  /* tp_del */
+};
+
+
 /* --- enumerations --- */
 
 
@@ -1042,10 +1626,24 @@ void python_ExecCb(unsigned int hash, void *p) {
   PyObject *callback = (PyObject*) p;
   PyObject_CallFunction(callback, (char*) "I", hash);
 }
-void python_BreakCb(void *p) {
+
+bool python_CliCmdCb(const char *cmd, void *p) {
   PyObject *callback = (PyObject*) p;
-  PyObject_CallFunction(callback, NULL);
+	PyObject *result = PyObject_CallFunction(callback, (char*) "s", cmd);
+	if (result == NULL) return false;
+  bool ret = PyObject_IsTrue(result);
+	Py_DECREF(result);
+	return ret;
 }
+bool python_BreakCb(CBreakpoint *bp, void *p) {
+  PyObject *callback = (PyObject*) p;
+  PyCBreakpoint *py_CBreakpoint;
+  py_CBreakpoint = PyObject_New(PyCBreakpoint, &PyCBreakpoint_Type);
+  py_CBreakpoint->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+  py_CBreakpoint->obj = bp;
+  return PyObject_CallFunction(callback, (char*) "O", py_CBreakpoint) != Py_False;
+}
+
 bool python_LogCb(int tick, const char *logger, char* msg, void *p) {
   PyObject *callback = (PyObject*) p;
   return PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg) != Py_False;
@@ -1068,6 +1666,11 @@ initdosboxdbg(void)
         return;
     }
     PyModule_AddObject(m, (char *) "CBreakpoint", (PyObject *) &PyCBreakpoint_Type);
+    /* Register the 'CDebugVar' class */
+    if (PyType_Ready(&PyCDebugVar_Type)) {
+        return;
+    }
+    PyModule_AddObject(m, (char *) "CDebugVar", (PyObject *) &PyCDebugVar_Type);
     /* Register the 'std::list<CBreakpoint>' class */
     if (PyType_Ready(&Pystd__list__lt__CBreakpoint__gt___Type)) {
         return;
@@ -1077,6 +1680,15 @@ initdosboxdbg(void)
     }
     PyModule_AddObject(m, (char *) "Std__list__lt__CBreakpoint__gt__", (PyObject *) &Pystd__list__lt__CBreakpoint__gt___Type);
     PyModule_AddObject(m, (char *) "Std__list__lt__CBreakpoint__gt__Iter", (PyObject *) &Pystd__list__lt__CBreakpoint__gt__Iter_Type);
+    /* Register the 'std::list<CDebugVar>' class */
+    if (PyType_Ready(&Pystd__list__lt__CDebugVar__gt___Type)) {
+        return;
+    }
+    if (PyType_Ready(&Pystd__list__lt__CDebugVar__gt__Iter_Type)) {
+        return;
+    }
+    PyModule_AddObject(m, (char *) "Std__list__lt__CDebugVar__gt__", (PyObject *) &Pystd__list__lt__CDebugVar__gt___Type);
+    PyModule_AddObject(m, (char *) "Std__list__lt__CDebugVar__gt__Iter", (PyObject *) &Pystd__list__lt__CDebugVar__gt__Iter_Type);
     PyModule_AddIntConstant(m, (char *) "CLEANUP", DBG_CLEANUP);
     PyModule_AddIntConstant(m, (char *) "TICK", DBG_TICK);
     PyModule_AddIntConstant(m, (char *) "VSYNC", DBG_VSYNC);

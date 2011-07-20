@@ -47,6 +47,17 @@ mod.add_function('DEBUG_EnableDebugger', None, [], custom_name='EnableDebugger')
 mod.add_function('GetAddress', retval('uint32_t'),
 	[ param('uint16_t', 'seg'), param('uint32_t','offset') ])
 
+klass = mod.add_class('CBreakpoint')
+klass.add_method('ShowList', None, [])
+klass.add_method('GetIntNr', 'int', [])
+klass.add_method('GetLocation', 'unsigned long', [])
+klass.add_method('GetSegment', 'int', [])
+klass.add_method('GetOffset', 'unsigned long', [])
+klass.add_method('GetValue', 'int', [])
+klass.add_method('IsActive', 'bool', [])
+
+mod.add_function('python_getscriptdir', 'std::string', [], custom_name='GetScriptDir')
+
 mod.header.writeln("""void python_EventCb(void *p);""")
 mod.body.writeln("""void python_EventCb(void *p) {
   PyObject *callback = (PyObject*) p;
@@ -71,6 +82,21 @@ mod.add_function("python_register_exec_cb",
 	[Parameter.new("PyCallback", "cb", callback='python_ExecCb')],
 	custom_name='ListenForExec')
 
+mod.header.writeln("""bool python_CliCmdCb(const char *cmd, void *p);""")
+mod.body.writeln("""
+bool python_CliCmdCb(const char *cmd, void *p) {
+  PyObject *callback = (PyObject*) p;
+	PyObject *result = PyObject_CallFunction(callback, (char*) "s", cmd);
+	if (result == NULL) return false;
+  bool ret = PyObject_IsTrue(result);
+	Py_DECREF(result);
+	return ret;
+}""")
+mod.add_function("python_register_clicmd_cb",
+	None,
+	[Parameter.new("PyCallback", "cb", callback='python_CliCmdCb')],
+	custom_name='ListenForCmd')
+
 mod.add_function('python_registers',
 	retval('PyObject*',caller_owns_return=False), [],
 	custom_name='GetRegs')
@@ -82,6 +108,9 @@ mod.add_function('python_dasm',
 	retval('char*'),
 	[ param('uint16_t','seg'),param('uint32_t','ofs'),param('int','eip') ],
 	custom_name='disasm')
+
+mod.add_function('python_mcbs', retval('PyObject*',caller_owns_return=False), [],
+	custom_name='GetMCBs')
 
 mod.add_function('python_getmemory', None,
 	[ param('uint32_t','loc'),param('uint32_t','len'),
@@ -111,10 +140,14 @@ mod.add_function('python_setpalette', None,
 	[ param('std::string*','mem', direction=Parameter.DIRECTION_IN) ],
 	custom_name='SetPalette')
 
-mod.header.writeln("""void python_BreakCb(void *p);""")
-mod.body.writeln("""void python_BreakCb(void *p) {
+mod.header.writeln("""bool python_BreakCb(CBreakpoint *bp, void *p);""")
+mod.body.writeln("""bool python_BreakCb(CBreakpoint *bp, void *p) {
   PyObject *callback = (PyObject*) p;
-  PyObject_CallFunction(callback, NULL);
+  PyCBreakpoint *py_CBreakpoint;
+  py_CBreakpoint = PyObject_New(PyCBreakpoint, &PyCBreakpoint_Type);
+  py_CBreakpoint->flags = PYBINDGEN_WRAPPER_FLAG_NONE;
+  py_CBreakpoint->obj = bp;
+  return PyObject_CallFunction(callback, (char*) "O", py_CBreakpoint) != Py_False;
 }""")
 mod.add_function("python_register_break_cb",
 	None,
@@ -126,7 +159,8 @@ mod.add_function("python_unregister_break_cb",
 	custom_name='UnregisterBreak')
 
 mod.header.writeln("""bool python_LogCb(int tick, const char *logger, char* msg, void *p);""")
-mod.body.writeln("""bool python_LogCb(int tick, const char *logger, char* msg, void *p) {
+mod.body.writeln("""
+bool python_LogCb(int tick, const char *logger, char* msg, void *p) {
   PyObject *callback = (PyObject*) p;
   return PyObject_CallFunction(callback, (char*) "iss", tick, logger, msg) != Py_False;
 }""")
@@ -145,18 +179,20 @@ mod.add_function("python_unregister_log_cb",
 #s_vga_config.add_instance_attribute('display_start', 'int')
 #s_vga_config.add_instance_attribute('gfx', 'VGA_Gfx')
 
-klass = mod.add_class('CBreakpoint')
-klass.add_method('ShowList', None, [])
-klass.add_method('GetIntNr', 'int', [])
-klass.add_method('GetSegment', 'int', [])
-klass.add_method('GetOffset', 'int', [])
-klass.add_method('GetValue', 'int', [])
-klass.add_method('IsActive', 'bool', [])
-
 mod.add_container('std::list<CBreakpoint>', retval('CBreakpoint'), 'list')
-mod.add_function('python_bpoints', retval('std::list<CBreakpoint>'), [], custom_name='GetBpoints')
+mod.add_function('python_bpoints', retval('std::list<CBreakpoint>'), [], custom_name='GetBPs')
 
 mod.add_function('python_vgamode', 'int', [], custom_name='VgaMode')
+
+klass = mod.add_class('CDebugVar')
+klass.add_copy_constructor()
+klass.add_constructor([param('char*','name'), param('unsigned long','addr')])
+klass.add_method('GetName', 'char*', [])
+klass.add_method('GetAdr', 'unsigned long', [])
+
+mod.add_container('std::list<CDebugVar>', retval('CDebugVar'), 'list')
+mod.add_function('python_vars', retval('std::list<CDebugVar>'), [], custom_name='GetVars')
+mod.add_function('python_insertvar', None, [param('char*','name'), param('unsigned long','addr')], custom_name='InsertVar')
 
 mod.add_enum('DbgEvt',('CLEANUP','TICK','VSYNC','BREAK','RESUME'),'DBG_')
 

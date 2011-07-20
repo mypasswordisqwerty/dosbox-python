@@ -238,32 +238,6 @@ bool GetDescriptorInfo(char* selname, char* out1, char* out2)
 	return false;
 };
 
-/********************/
-/* DebugVar   stuff */
-/********************/
-
-class CDebugVar
-{
-public:
-	CDebugVar(char* _name, PhysPt _adr) { adr=_adr; safe_strncpy(name,_name,16); };
-	
-	char*	GetName(void) { return name; };
-	PhysPt	GetAdr (void) { return adr;  };
-
-private:
-	PhysPt  adr;
-	char	name[16];
-
-public: 
-	static void			InsertVariable	(char* name, PhysPt adr);
-	static CDebugVar*	FindVar			(PhysPt adr);
-	static void			DeleteAll		();
-	static bool			SaveVars		(char* name);
-	static bool			LoadVars		(char* name);
-
-	static std::list<CDebugVar*>	varList;
-};
-
 std::list<CDebugVar*> CDebugVar::varList;
 
 
@@ -382,6 +356,9 @@ bool CBreakpoint::CheckBreakpoint(Bitu seg, Bitu off)
 			} else {
 				ignoreOnce = bp;
 			};
+			#ifdef C_DEBUG_SCRIPTING
+			if(!python_break(bp)) return false;
+			#endif
 			return true;
 		} 
 #if C_HEAVY_DEBUG
@@ -405,6 +382,9 @@ bool CBreakpoint::CheckBreakpoint(Bitu seg, Bitu off)
 				if (mem_readb_checked(address,&value)) return false;
 				if (bp->GetValue() != value) {
 					// Yup, memory value changed
+					#ifdef C_DEBUG_SCRIPTING
+					if(!python_break(bp)) return false;
+					#endif
 					DEBUG_ShowMsg("DEBUG: Memory breakpoint %s: %04X:%04X - %02X -> %02X\n",(bp->GetType()==BKPNT_MEMORY_PROT)?"(Prot)":"",bp->GetSegment(),bp->GetOffset(),bp->GetValue(),value);
 					bp->SetValue(value);
 					return true;
@@ -909,6 +889,11 @@ bool ChangeRegister(char* str)
 
 bool ParseCommand(char* str) {
 	char* found = str;
+
+	#ifdef C_DEBUG_SCRIPTING
+	if(python_clicmd(str)) return true;
+	#endif
+
 	for(char* idx = found;*idx != 0; idx++)
 		*idx = toupper(*idx);
 
@@ -940,7 +925,7 @@ bool ParseCommand(char* str) {
 
 	if (command == "IV") { // Insert variable
 		Bit16u seg = (Bit16u)GetHexValue(found,found); found++;
-		Bit32u ofs = (Bit16u)GetHexValue(found,found); found++;
+		Bit32u ofs = (Bit32u)GetHexValue(found,found); found++;
 		char name[16];
 		for (int i=0; i<16; i++) {
 			if (found[i] && (found[i]!=' ')) name[i] = found[i]; 
@@ -949,7 +934,7 @@ bool ParseCommand(char* str) {
 		name[15] = 0;
 
 		if(!name[0]) return false;
-		DEBUG_ShowMsg("DEBUG: Created debug var %s at %04X:%04X\n",name,seg,ofs);
+		DEBUG_ShowMsg("DEBUG: Created debug var %s at %04X:%08X\n",name,seg,ofs);
 		CDebugVar::InsertVariable(name,GetAddress(seg,ofs));
 		return true;
 	};
@@ -1587,12 +1572,7 @@ Bit32u DEBUG_CheckKeys(void) {
 				break;
 		#ifdef C_DEBUG_SCRIPTING
 		case KEY_F(8):	// Reload scripts
-				{
-				std::string path;
-				Cross::CreatePlatformConfigDir(path);
-				path += "/python";
-				python_loadscripts(path.c_str());
-				}
+				python_loadscripts(python_getscriptdir());
 				break;
 		#endif
 		case KEY_F(9):	// Set/Remove Breakpoint
@@ -2104,10 +2084,7 @@ void DEBUG_Init(Section* sec) {
 	sec->AddDestroyFunction(&DEBUG_ShutDown);
 	/* Python initialization */
 	#ifdef C_DEBUG_SCRIPTING
-	std::string path;
-	Cross::CreatePlatformConfigDir(path);
-	path += "/python";
-	python_loadscripts(path.c_str());
+	python_loadscripts(python_getscriptdir());
 	#endif
 }
 

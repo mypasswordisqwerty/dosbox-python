@@ -68,4 +68,31 @@ public:
 	static CBreakpoint*				ignoreOnce;
 };
 
+/********************/
+/* DebugVar   stuff */
+/********************/
+
+class CDebugVar
+{
+public:
+	CDebugVar() {};
+	CDebugVar(char* _name, PhysPt _adr) { adr=_adr; safe_strncpy(name,_name,16); };
+	
+	char*	GetName(void) { return name; };
+	PhysPt	GetAdr (void) { return adr;  };
+
+private:
+	PhysPt  adr;
+	char	name[16];
+
+public: 
+	static void			InsertVariable	(char* name, PhysPt adr);
+	static CDebugVar*	FindVar			(PhysPt adr);
+	static void			DeleteAll		();
+	static bool			SaveVars		(char* name);
+	static bool			LoadVars		(char* name);
+
+	static std::list<CDebugVar*>	varList;
+};
+
 #endif

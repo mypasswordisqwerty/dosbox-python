@@ -25,7 +25,6 @@
 #include "regs.h"
 #include "callback.h"
 #include "support.h"
-#include "../debug/debug_api.h"
 
 void DOS_Shell::ShowPrompt(void) {
 	Bit8u drive=DOS_GetDefaultDrive()+'A';
@@ -470,10 +469,6 @@ bool DOS_Shell::Execute(char * name,char * args) {
 
 		/* HACK: Store full commandline for mount and imgmount */
 		full_arguments.assign(line);
-
-		#ifdef C_DEBUG_SCRIPTING
-		python_run(fullname);
-		#endif
 
 		/* Fill the command line */
 		CommandTail cmdtail;

@@ -26,6 +26,7 @@
 #include "callback.h"
 #include "debug.h"
 #include "cpu.h"
+#include "../debug/debug_api.h"
 
 const char * RunningProgram="DOSBOX";
 
@@ -253,6 +254,13 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 	PhysPt loadaddress;RealPt relocpt;
 	Bitu headersize=0,imagesize=0;
 	DOS_ParamBlock block(block_pt);
+
+	#ifdef C_DEBUG_SCRIPTING
+	{
+	Bit8u drive;char fulldir[DOS_PATHLENGTH];
+	if (DOS_MakeName(name,fulldir,&drive)) python_run(fulldir);
+	}
+	#endif
 
 	block.LoadData();
 	//Remove the loadhigh flag for the moment!

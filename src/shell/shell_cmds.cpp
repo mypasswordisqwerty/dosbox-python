@@ -127,7 +127,6 @@ void DOS_Shell::DoCommand(char * line) {
 		if (*line == '/') break;
 		if (*line == '\t') break;
 		if (*line == '=') break;
-		if (*line == ':') break;
 		if ((*line == '.') ||(*line == '\\')) {  //allow stuff like cd.. and dir.exe cd\kees
 			*cmd_write=0;
 			Bit32u cmd_index=0;

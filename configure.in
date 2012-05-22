@@ -220,22 +220,38 @@ AC_ARG_ENABLE(debug,AC_HELP_STRING([--enable-debug],[Enable debug mode]),[
 ],)
 
 AC_ARG_ENABLE(python,AC_HELP_STRING([--enable-python],[Enable debug mode python scripting]),[
-	AC_MSG_CHECKING([pkg-config for python])
+    AC_MSG_CHECKING([for python])
 	if ! test x$enable_debug = xheavy ; then 
 		AC_MSG_ERROR([Requires --enable-debug=heavy])
 	fi
-	if pkg-config --exists python; then
-		pypc=python
-	elif pkg-config --exists python-2.7; then
-		pypc=python-2.7
-	else
-		AC_MSG_ERROR([Can't find python])
-	fi
-	AC_MSG_RESULT([found])
-	python_cflags=`pkg-config --cflags $pypc`
-       AC_SUBST([PYTHON_CFLAGS],["$python_cflags"])
-	python_ldflags=`pkg-config --libs $pypc`
-       AC_SUBST([PYTHON_LDFLAGS],["$python_ldflags"])
+
+case "$host" in
+    *-*-cygwin* | *-*-mingw32*)
+
+        AC_SUBST([PYTHON_CFLAGS],["-I/c/Python27/include"])
+        AC_SUBST([PYTHON_LDFLAGS],["-L/c/Python27/libs -lpython27"])
+        pypc=python
+        AC_MSG_RESULT([no detection on Windows, fix paths in configure.in if needed])
+
+    ;;
+    *)
+
+        if pkg-config --exists python; then
+            pypc=python
+        elif pkg-config --exists python-2.7; then
+            pypc=python-2.7
+        else
+            AC_MSG_ERROR([Can't find python])
+        fi
+        AC_MSG_RESULT([found])
+        python_cflags=`pkg-config --cflags $pypc`
+           AC_SUBST([PYTHON_CFLAGS],["$python_cflags"])
+        python_ldflags=`pkg-config --libs $pypc`
+           AC_SUBST([PYTHON_LDFLAGS],["$python_ldflags"])
+
+    ;;
+esac
+
   AC_DEFINE(C_DEBUG_SCRIPTING,1)
 	CPPFLAGS="$CPPFLAGS $PYTHON_CFLAGS"
 	LIBS="$LIBS $PYTHON_LDFLAGS"

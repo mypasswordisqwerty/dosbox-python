@@ -21,22 +21,19 @@ def hexdump(src, length=16):
     return ''.join(result)
 
 def demo():
-	try:
-		regs = (eax,ebx,ecx,edx, esi,edi,esp,ebp,eip) = GetRegs()
-		segs = (cs,ds,es,fs,gs,ss) = GetSegments()
-		msg( 'registers: '+str(regs) )
-		msg( 'segments: '+str(segs) )
-		msg( 'executing: '+disasm(0xF000, eip, eip) )
-		msg( 'display mode: %x' % VgaMode() )
-		m = ReadMem(GetAddress(0x0, 0x1200), 14)
-		msg( 'some mem: '+hexdump(m) )
-		ParseCommand("BP ")
-		for h in GetBpoints():
-			msg('BP %i. %x:%x' % (h.GetIntNr(), h.GetSegment(), h.GetOffset()))
-			#msg(str(dir(h)))
-		msg('F5 to continue')
-	except Exception as e:
-		msg(e)
+	regs = (eax,ebx,ecx,edx, esi,edi,esp,ebp,eip) = GetRegs()
+	segs = (cs,ds,es,fs,gs,ss) = GetSegments()
+	msg( 'registers: '+str(regs) )
+	msg( 'segments: '+str(segs) )
+	msg( 'executing: '+disasm(0xF000, eip, eip) )
+	msg( 'display mode: %x' % VgaMode() )
+	m = ReadMem(GetAddress(0x0, 0x1200), 14)
+	msg( 'some mem: '+hexdump(m) )
+	ParseCommand("BP ")
+	for h in GetBPs():
+		msg('BP %i. %x:%x' % (h.GetIntNr(), h.GetSegment(), h.GetOffset()))
+		#msg(str(dir(h)))
+	msg('F5 to continue')
 
 def shift(seq, n=1):
 	return seq[n:]+seq[:n]
@@ -51,13 +48,15 @@ def executed(binhash):
 	msg('executed binary hash: %x' % binhash)
 
 def logged(tick, logger, mesg):
+	# some games like to reset PITs in loops, skip logging
+	if logger == 'PIT': return False
+	
 	if logger == 'VGA' and 'normal' in mesg:
 		msg('Hello, press alt-break for some python bindings')
 
 starttime = time.time()
 
 ListenFor(BREAK, demo)
-ListenForExec(executed)
+#ListenForExec(executed)
 ListenForLog(logged)
 ListenFor(VSYNC, rotpal)
-

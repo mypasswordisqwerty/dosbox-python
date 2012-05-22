@@ -255,13 +255,6 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 	Bitu headersize=0,imagesize=0;
 	DOS_ParamBlock block(block_pt);
 
-	#ifdef C_DEBUG_SCRIPTING
-	{
-	Bit8u drive;char fulldir[DOS_PATHLENGTH];
-	if (DOS_MakeName(name,fulldir,&drive)) python_run(fulldir);
-	}
-	#endif
-
 	block.LoadData();
 	//Remove the loadhigh flag for the moment!
 	if(flags&0x80) LOG(LOG_EXEC,LOG_ERROR)("using loadhigh flag!!!!!. dropping it");
@@ -271,12 +264,18 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		return false;
 //		E_Exit("DOS:Not supported execute mode %d for file %s",flags,name);
 	}
+
+    #ifdef C_DEBUG_SCRIPTING
+    python_run(name);
+    #endif
+
 	/* Check for EXE or COM File */
 	bool iscom=false;
 	if (!DOS_OpenFile(name,OPEN_READ,&fhandle)) {
 		DOS_SetError(DOSERR_FILE_NOT_FOUND);
 		return false;
 	}
+
 	len=sizeof(EXE_Header);
 	if (!DOS_ReadFile(fhandle,(Bit8u *)&head,&len)) {
 		DOS_CloseFile(fhandle);
@@ -308,6 +307,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 			if (imagesize+headersize<512) imagesize = 512-headersize;
 		}
 	}
+
 	Bit8u * loadbuf=(Bit8u *)new Bit8u[0x10000];
 	if (flags!=OVERLAY) {
 		/* Create an environment block */

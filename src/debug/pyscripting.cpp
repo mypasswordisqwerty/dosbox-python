@@ -36,6 +36,7 @@ PyerrorHandler()
        strcpy(save_error_info, "<unknown exception data>");
    Py_XDECREF(pystring);
 
+   DEBUG_ShowMsg("** EXCEPTION **");
    if(errtraceback)
      DEBUG_ShowMsg("%s:%i %s", save_error_type, ((PyTracebackObject *) errtraceback)->tb_lineno, save_error_info);
    else
@@ -44,6 +45,7 @@ PyerrorHandler()
    Py_XDECREF(errobj);
    Py_XDECREF(errdata);         /* caller owns all 3 */
    Py_XDECREF(errtraceback);    /* already NULL'd out */
+   PyErr_Clear();
 }
 
 std::string
@@ -51,7 +53,39 @@ python_getscriptdir()
 {
 	std::string path;
 	Cross::CreatePlatformConfigDir(path);
-	return path + "/python";
+	return path + "python";
+}
+
+int
+PyRun_SimpleFileErr(FILE *fp, const char *filename, void (*errhandler)())
+{
+    PyObject *m, *d, *v;
+
+    m = PyImport_AddModule("__main__");
+    if (m == NULL)
+        return -1;
+    d = PyModule_GetDict(m);
+    if (PyDict_GetItemString(d, "__file__") == NULL) {
+        PyObject *f = PyString_FromString(filename);
+        if (f == NULL)
+            return -1;
+        if (PyDict_SetItemString(d, "__file__", f) < 0) {
+            Py_DECREF(f);
+            return -1;
+        }
+        Py_DECREF(f);
+    }
+
+    v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
+                  0, NULL);
+    if (v == NULL) {
+        (*errhandler)();
+        return -1;
+    }
+    Py_DECREF(v);
+    if (Py_FlushLine())
+        PyErr_Clear();
+    return 0;
 }
 
 int
@@ -79,10 +113,10 @@ python_loadscripts(std::string path)
 				current_script = &script;
 				initdosboxdbg();
 
-				int ret = PyRun_SimpleFileEx(fopen(script.filename, "r"), script.filename, true);
-				//PyObject* pyFile = PyFile_FromString(fullpath, "r");
-				//int ret = PyRun_SimpleFile(PyFile_AsFile(pyFile), fullpath);
-				//Py_DECREF(pyFile);
+				PyObject* pypath = PyFile_FromString(script.filename, "r");
+				int ret = PyRun_SimpleFileErr(PyFile_AsFile(pypath),
+                                              script.filename, PyerrorHandler);
+				Py_DECREF(pypath);
 
 				if (ret == 0) {
 					DEBUG_ShowMsg("Loaded %s\n", filename);
@@ -243,7 +277,7 @@ python_unregister_log_cb(PyLogCbWrapper cb, void *p)
 }
 
 void
-python_register_exec_cb(PyUIntWrap wrap, void *cb)
+python_register_exec_cb(PyCChrWrap wrap, void *cb)
 {
 	current_script->exec_cb = cb;
 }
@@ -430,22 +464,39 @@ python_vars()
 }
 
 #include <libgen.h>
+#include <../src/dos/drives.h>
+
+extern DOS_File * Files[DOS_FILES];
 
 void
 python_run(char *file)
 {
-	DEBUG_ShowMsg("run: %s", file);
-	strcpy(exec_filename, basename(file));
-	unsigned int hash = MurmurFile(file);
+    Bit8u drive;char fullname[DOS_PATHLENGTH];
+    if (!DOS_MakeName(file, fullname, &drive) ||
+            strncmp(Drives[drive]->GetInfo(),"local directory",15)) {
+        return;
+    }
+
+    localDrive *drv = dynamic_cast<localDrive*>(Drives[drive]);
+    if (drv == NULL) {
+        DEBUG_ShowMsg("Drive not found");
+        return;
+    }
+
+    char sysname[CROSS_LEN];
+    drv->GetSystemFilename(sysname, fullname);
+
 	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
 		current_script = &(*itr);
 		if(current_script->exec_cb != NULL) {
 			PyThreadState_Swap(current_script->interpreter);
-			python_ExecCb(hash, current_script->exec_cb);
+			python_ExecCb(sysname, current_script->exec_cb);
+			if(PyErr_Occurred() != NULL) {
+				PyerrorHandler();
+			}
 		}
 	}
 }
-
 
 bool
 python_clicmd(char *cmd)

@@ -72,10 +72,11 @@ mod.add_function("python_unregister_event_cb",
 	[param('int','type'),Parameter.new("PyCallback", "cb", callback='python_EventCb')],
 	custom_name='DontListenFor')
 
-mod.header.writeln("""void python_ExecCb(unsigned int hash, void *p);""")
-mod.body.writeln("""void python_ExecCb(unsigned int hash, void *p) {
+mod.header.writeln("""bool python_ExecCb(const char *file, void *p);""")
+mod.body.writeln("""bool python_ExecCb(const char *file, void *p) {
   PyObject *callback = (PyObject*) p;
-  PyObject_CallFunction(callback, (char*) "I", hash);
+  PyObject_CallFunction(callback, (char*) "s", file);
+  return true;
 }""")
 mod.add_function("python_register_exec_cb",
 	None,
@@ -194,7 +195,9 @@ mod.add_container('std::list<CDebugVar>', retval('CDebugVar'), 'list')
 mod.add_function('python_vars', retval('std::list<CDebugVar>'), [], custom_name='GetVars')
 mod.add_function('python_insertvar', None, [param('char*','name'), param('unsigned long','addr')], custom_name='InsertVar')
 
+mod.add_function('PMurHash32_File', 'unsigned int', [param('int','seed'),param('char*','filename')])
+#uint32_t PMurHash32(uint32_t seed, const void *key, int len)
 mod.add_enum('DbgEvt',('CLEANUP','TICK','VSYNC','BREAK','RESUME'),'DBG_')
 
-mod.generate(sys.stdout)
-
+with open('pybinding.cpp','w') as fh:
+  mod.generate(fh)

@@ -14,6 +14,7 @@
 #include "../ints/int10.h"
 #include "dos_inc.h"
 #include "debug.hpp"
+#include "PMurHash.h"
 
 using namespace std;
 
@@ -24,14 +25,10 @@ void DEBUG_ShowMsg(char const* format,...);
 Bitu DEBUG_EnableDebugger();
 Bitu DasmI386(char* buffer, PhysPt pc, Bitu cur_ip, bool bit32);
 
-// -- MurmurHash2A.cpp
-
-unsigned int MurmurFile (const char * filename);
-
 // -- pybinding.cpp
 
 extern void python_EventCb(void *p);
-extern void python_ExecCb(unsigned int hash, void *p);
+extern bool python_ExecCb(const char *file, void *p);
 extern bool python_CliCmdCb(const char *cmd, void *p);
 
 // --- TODO: cleanup callback handling
@@ -78,8 +75,8 @@ void python_register_event_cb(int evt, PyVoidCb cb, void *p);
 void python_unregister_event_cb(int evt, PyVoidCb cb, void *p);
 
 void python_register_clicmd_cb(PyCChrWrap wrap, void *cb);
-void python_register_exec_cb(PyUIntWrap cb, void *p);
-void python_unregister_exec_cb(PyUIntWrap cb, void *p);
+void python_register_exec_cb(PyCChrWrap cb, void *p);
+void python_unregister_exec_cb(PyCChrWrap cb, void *p);
 void python_register_log_cb(PyLogCbWrapper cb, void *p);
 void python_unregister_log_cb(PyLogCbWrapper cb, void *p);
 

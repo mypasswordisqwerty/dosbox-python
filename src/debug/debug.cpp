@@ -1464,7 +1464,7 @@ Bit32u DEBUG_CheckKeys(void) {
 			break;
 		}
 #endif
-		switch (toupper(key)) {
+		switch (key) {
 		case 27:	// escape (a bit slow): Clears line. and processes alt commands.
 			key=getch();
 			if(key < 0) { //Purely escape Clear line

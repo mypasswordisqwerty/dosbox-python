@@ -1,0 +1,15 @@
+.*
+Makefile*
+aclocal.m4
+*.cache
+/config.*
+compile
+configure
+depcomp
+install-sh
+missing
+stamp-h1
+xcode/build
+xcuserdata
+*.xcworkspace
+

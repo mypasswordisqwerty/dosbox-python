@@ -95,9 +95,9 @@ public:
 #endif
 
 
-class DEBUG;
+class CDEBUG;
 
-DEBUG*	pDebugcom	= 0;
+CDEBUG*	pDebugcom	= 0;
 bool	exitLoop	= false;
 
 
@@ -1955,10 +1955,10 @@ static void LogInstruction(Bit16u segValue, Bit32u eipValue,  ofstream& out) {
 
 // DEBUG.COM stuff
 
-class DEBUG : public Program {
+class CDEBUG : public Program {
 public:
-	DEBUG()		{ pDebugcom	= this;	active = false; };
-	~DEBUG()	{ pDebugcom	= 0; };
+	CDEBUG()		{ pDebugcom	= this;	active = false; };
+	~CDEBUG()	{ pDebugcom	= 0; };
 
 	bool IsActive() { return active; };
 
@@ -2029,7 +2029,7 @@ Bitu DEBUG_EnableDebugger(void)
 };
 
 static void DEBUG_ProgramStart(Program * * make) {
-	*make=new DEBUG;
+	*make=new CDEBUG;
 }
 
 // INIT 

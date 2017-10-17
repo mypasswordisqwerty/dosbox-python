@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "string.h"
+#include <string.h>
 #include "vga.h"
 #include "debug_api.h"
 
@@ -464,7 +464,7 @@ python_vars()
 }
 
 #include <libgen.h>
-#include <../src/dos/drives.h>
+#include "../dos/drives.h"
 
 extern DOS_File * Files[DOS_FILES];
 

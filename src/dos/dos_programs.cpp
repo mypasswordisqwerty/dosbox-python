@@ -65,8 +65,8 @@ public:
 
 		for (int d = 0;d < DOS_DRIVES;d++) {
 			if (!Drives[d]) continue;
-
-			char root[4] = {'A'+d,':','\\',0};
+            char root[4] = "A:\\";
+            root[0] = 'A'+d;
 			bool ret = DOS_FindFirst(root,DOS_ATTR_VOLUME);
 			if (ret) {
 				dta.GetResult(name,size,date,time,attr);

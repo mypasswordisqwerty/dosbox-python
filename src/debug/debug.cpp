@@ -57,7 +57,6 @@ void WIN32_Console();
 #include <unistd.h>
 static struct termios consolesettings;
 #endif
-int old_cursor_state;
 
 // Forwards
 static void DrawCode(void);
@@ -560,7 +559,7 @@ bool DEBUG_IntBreakpoint(Bit8u intNum)
 	return true;
 };
 
-static bool StepOver()
+bool DEBUG_StepOver()
 {
 	exitLoop = false;
 	PhysPt start=GetAddress(SegValue(cs),reg_eip);
@@ -577,6 +576,22 @@ static bool StepOver()
 	} 
 	return false;
 };
+
+Bitu DEBUG_StepInto(void){
+    exitLoop = false;
+    skipFirstInstruction = true; // for heavy debugger
+    CPU_Cycles = 1;
+    Bitu ret=(*cpudecoder)();
+    CBreakpoint::ignoreOnce = 0;
+    return ret;
+}
+
+void DEBUG_Run(){
+    debugging=false;
+    CBreakpoint::ActivateBreakpoints(SegPhys(cs)+reg_eip,true);
+    ignoreAddressOnce = SegPhys(cs)+reg_eip;
+    DOSBOX_SetNormalLoop();
+}
 
 bool DEBUG_ExitLoop(void)
 {
@@ -890,15 +905,9 @@ bool ChangeRegister(char* str)
 bool ParseCommand(char* str) {
 	char* found = str;
 
-	#ifdef C_DEBUG_SCRIPTING
-	if(python_clicmd(str)) return true;
-	#endif
-
-	for(char* idx = found;*idx != 0; idx++)
-		*idx = toupper(*idx);
-
 	found = trim(found);
 	string s_found(found);
+    transform(s_found.begin(), s_found.end(), s_found.begin(), ::toupper);
 	istringstream stream(s_found);
 	string command;
 	stream >> command;
@@ -1258,6 +1267,10 @@ bool ParseCommand(char* str) {
 		
 		return true;
 	};
+
+#ifdef C_DEBUG_SCRIPTING
+    return python_clicmd(str);
+#endif
 	return false;
 };
 
@@ -1565,10 +1578,7 @@ Bit32u DEBUG_CheckKeys(void) {
 				codeViewData.inputPos = strlen(codeViewData.inputStr);
 				break; 
 		case KEY_F(5):	// Run Program
-				debugging=false;
-				CBreakpoint::ActivateBreakpoints(SegPhys(cs)+reg_eip,true);						
-				ignoreAddressOnce = SegPhys(cs)+reg_eip;
-				DOSBOX_SetNormalLoop();	
+                DEBUG_Run();
 				break;
 		#ifdef C_DEBUG_SCRIPTING
 		case KEY_F(8):	// Reload scripts
@@ -1588,23 +1598,15 @@ Bit32u DEBUG_CheckKeys(void) {
 				}
 				break;
 		case KEY_F(10):	// Step over inst
-				if (StepOver()) return 0;
+				if (DEBUG_StepOver()) return 0;
 				else {
-					exitLoop = false;
-					skipFirstInstruction = true; // for heavy debugger
-					CPU_Cycles = 1;
-					ret=(*cpudecoder)();
-					SetCodeWinStart();
-					CBreakpoint::ignoreOnce = 0;
+                    ret = DEBUG_StepInto();
+                    SetCodeWinStart();
 				}
 				break;
 		case KEY_F(11):	// trace into
-				exitLoop = false;
-				skipFirstInstruction = true; // for heavy debugger
-				CPU_Cycles = 1;
-				ret = (*cpudecoder)();
-				SetCodeWinStart();
-				CBreakpoint::ignoreOnce = 0;
+                ret = DEBUG_StepInto();
+                SetCodeWinStart();
 				break;
 		case 0x0A: //Parse typed Command
 				codeViewData.inputStr[MAXCMDLEN] = '\0';
@@ -2035,28 +2037,22 @@ static void DEBUG_ProgramStart(Program * * make) {
 // INIT 
 
 void DEBUG_SetupConsole(void) {
-	#ifdef WIN32
-	WIN32_Console();
-	#else
-	tcgetattr(0,&consolesettings);
-	printf("\e[8;50;80t"); //resize terminal
-	fflush(NULL);
-	#endif	
-	memset((void *)&dbg,0,sizeof(dbg));
-	debugging=false;
-//	dbg.active_win=3;
-	/* Start the Debug Gui */
-	DBGUI_StartUp();
+        #ifdef WIN32
+        WIN32_Console();
+        #else
+        tcgetattr(0,&consolesettings);
+        printf("\e[8;50;80t"); //resize terminal
+        fflush(NULL);
+        #endif
+        memset((void *)&dbg,0,sizeof(dbg));
+        debugging=false;
+    //    dbg.active_win=3;
 }
 
 void DEBUG_ShutDown(Section * /*sec*/) {
-	#ifdef C_DEBUG_SCRIPTING
-	python_shutdown();
-	#endif
 	CBreakpoint::DeleteAll();
 	CDebugVar::DeleteAll();
-	curs_set(old_cursor_state);
-	endwin();
+	
 	#ifndef WIN32
 	tcsetattr(0, TCSANOW,&consolesettings);
 //	printf("\e[0m\e[2J"); //Seems to destroy scrolling
@@ -2068,6 +2064,7 @@ void DEBUG_ShutDown(Section * /*sec*/) {
 Bitu debugCallback;
 
 void DEBUG_Init(Section* sec) {
+    /* Start the Debug Gui */
 
 //	MSG_Add("DEBUG_CONFIGFILE_HELP","Debugger related options.\n");
 	DEBUG_DrawScreen();
@@ -2082,10 +2079,6 @@ void DEBUG_Init(Section* sec) {
 	CALLBACK_Setup(debugCallback,DEBUG_EnableDebugger,CB_RETF,"debugger");
 	/* shutdown function */
 	sec->AddDestroyFunction(&DEBUG_ShutDown);
-	/* Python initialization */
-	#ifdef C_DEBUG_SCRIPTING
-	python_loadscripts(python_getscriptdir());
-	#endif
 }
 
 // DEBUGGING VAR STUFF

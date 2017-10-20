@@ -101,6 +101,7 @@ void PIC_Init(Section*);
 void TIMER_Init(Section*);
 void BIOS_Init(Section*);
 void DEBUG_Init(Section*);
+void PYTHON_Init(Section*);
 void CMOS_Init(Section*);
 
 void MSCDEX_Init(Section*);
@@ -350,7 +351,7 @@ void DOSBOX_Init(void) {
 	Pstring = secprop->Add_path("captures",Property::Changeable::Always,"capture");
 	Pstring->Set_help("Directory where things like wave, midi, screenshot get captured.");
 
-#if C_DEBUG	
+#if C_DEBUG
 	LOG_StartUp();
 #endif
 	
@@ -370,6 +371,15 @@ void DOSBOX_Init(void) {
 	secprop->AddInitFunction(&PROGRAMS_Init);
 	secprop->AddInitFunction(&TIMER_Init);//done
 	secprop->AddInitFunction(&CMOS_Init);//done
+
+#ifdef C_DEBUG_SCRIPTING
+    secprop=control->AddSection_prop("python",&PYTHON_Init);
+    Pstring = secprop->Add_path("path",Property::Changeable::OnlyAtStart,"");
+    Pstring->Set_help("Directory for python scripts.");
+    Pstring = secprop->Add_path("ui",Property::Changeable::OnlyAtStart,"dosbox");
+    Pstring->Set_help("Debugger UI module.");
+#endif
+
 
 	secprop=control->AddSection_prop("render",&RENDER_Init,true);
 	Pint = secprop->Add_int("frameskip",Property::Changeable::Always,0);
@@ -495,6 +505,7 @@ void DOSBOX_Init(void) {
 	                  "  When using a Roland MT-32 rev. 0 as midi output device, some games may require a delay in order to prevent 'buffer overflow' issues.\n"
 	                  "  In that case, add 'delaysysex', for example: midiconfig=2 delaysysex\n"
 	                  "  See the README/Manual for more details.");
+
 
 #if C_DEBUG
 	secprop=control->AddSection_prop("debug",&DEBUG_Init);

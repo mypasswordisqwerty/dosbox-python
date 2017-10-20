@@ -12,4 +12,5 @@ stamp-h1
 xcode/build
 xcuserdata
 *.xcworkspace
+*.pyc
 

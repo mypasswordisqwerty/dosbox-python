@@ -1,6 +1,7 @@
-#ifdef C_DEBUG_SCRIPTING
 #ifndef DOSBOX_DEBUG_API_H
 #define DOSBOX_DEBUG_API_H
+
+#ifdef C_DEBUG_SCRIPTING
 
 #include <Python.h>
 #include <list>
@@ -14,16 +15,17 @@
 #include "../ints/int10.h"
 #include "dos_inc.h"
 #include "debug.hpp"
-#include "PMurHash.h"
 
 using namespace std;
 
 // -- debug.cpp
 
 bool ParseCommand(char* str);
-void DEBUG_ShowMsg(char const* format,...);
 Bitu DEBUG_EnableDebugger();
 Bitu DasmI386(char* buffer, PhysPt pc, Bitu cur_ip, bool bit32);
+void DEBUG_Run();
+bool DEBUG_StepOver();
+Bitu DEBUG_StepInto();
 
 // -- pybinding.cpp
 
@@ -59,15 +61,13 @@ typedef struct t_pyscript {
 
 // -- pyscripting.cpp
 
-void python_init();
 std::string python_getscriptdir();
 int python_loadscripts(std::string path);
-void python_shutdown();
 void python_event(int evt);
 bool python_break(CBreakpoint *bp);
 bool python_log(int tick, const char *logger, char *msg);
-void python_run(char *file);
-bool python_clicmd(char *cmd);
+void python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off);
+bool python_clicmd(const char *cmd);
 
 void python_register_break_cb(PyBreakCbWrapper cb, void *data);
 void python_unregister_break_cb(PyBreakCbWrapper cb, void *data);
@@ -94,8 +94,6 @@ void python_setpalette(std::string *pal);
 int python_vgamode();
 std::list<CDebugVar> python_vars();
 void python_insertvar(char *name, Bit32u addr);
-
-PyMODINIT_FUNC initdosboxdbg(void);
 
 #endif
 #endif

@@ -1,10 +1,16 @@
+#include "dosbox.h"
 #include <Python.h>
 #include <string.h>
 #include "vga.h"
+#include "control.h"
 #include "debug_api.h"
+#include "setup.h"
+#include "debug_inc.h"
+#include "bindings/_dbox.h"
 
 list<t_pyscript> scripts;
 t_pyscript *current_script = NULL;
+bool dosboxUI = false;
 
 char save_error_type[1024], save_error_info[1024], exec_filename[13];
 
@@ -99,8 +105,6 @@ python_loadscripts(std::string path)
     dir = open_directory(sdir);
     if(!dir) return 0;
 
-		python_init();
-
     char filename[CROSS_LEN];
     bool testRead = read_directory_first(dir, filename, is_dir);
     for ( ; testRead; testRead = read_directory_next(dir, filename, is_dir) ) {
@@ -111,7 +115,6 @@ python_loadscripts(std::string path)
 
 				script.interpreter = Py_NewInterpreter();
 				current_script = &script;
-				initdosboxdbg();
 
 				PyObject* pypath = PyFile_FromString(script.filename, "r");
 				int ret = PyRun_SimpleFileErr(PyFile_AsFile(pypath),
@@ -135,38 +138,6 @@ python_loadscripts(std::string path)
     close_directory(dir);
     return 0;
 }
-
-void
-python_init()
-{
-	if (!Py_IsInitialized()) {
-		Py_Initialize();
-	} else {
-		python_event(DBG_CLEANUP);
-/*
-		PyGILState_STATE state = PyGILState_Ensure();
-		Py_AddPendingCall(&python_interrupt, NULL);
-		PyGILState_Release(state);
-		for (list<t_pyscript>::const_iterator it = scripts.begin(); it != scripts.end(); ++it) {
-			PyThreadState_Swap((*it).interpreter);
-			PyThreadState *state = PyThreadState_Get();
-			Py_EndInterpreter((*it).interpreter);	// sometimes causes SIGSEGV in PyImport_Cleanup
-		}
-*/
-		current_script = NULL;
-		scripts.clear();
-	}
-}
-
-void
-python_shutdown()
-{
-	if (Py_IsInitialized()) {
-		python_event(DBG_CLEANUP);
-		Py_Finalize();
-	}
-}
-
 
 map<PyVoidCb,void*> *get_callbackmap(int evt)
 {
@@ -469,7 +440,7 @@ python_vars()
 extern DOS_File * Files[DOS_FILES];
 
 void
-python_run(char *file)
+python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off)
 {
     Bit8u drive;char fullname[DOS_PATHLENGTH];
     if (!DOS_MakeName(file, fullname, &drive) ||
@@ -490,7 +461,7 @@ python_run(char *file)
 		current_script = &(*itr);
 		if(current_script->exec_cb != NULL) {
 			PyThreadState_Swap(current_script->interpreter);
-			python_ExecCb(sysname, current_script->exec_cb);
+			//python_ExecCb(sysname, current_script->exec_cb);
 			if(PyErr_Occurred() != NULL) {
 				PyerrorHandler();
 			}
@@ -499,19 +470,87 @@ python_run(char *file)
 }
 
 bool
-python_clicmd(char *cmd)
+python_clicmd(const char *cmd)
 {
-	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
-		current_script = &(*itr);
-		if(current_script->clicmd_cb != NULL) {
-			PyThreadState_Swap(current_script->interpreter);
-			if(python_CliCmdCb(cmd, current_script->clicmd_cb)) {
-				return true;
-			} else if(PyErr_Occurred() != NULL) {
-				PyerrorHandler();
-			}
-		}
-	}
-	return false;
+    int res = PyRun_SimpleString(cmd);
+    return res==0;
 }
+
+
+void PYTHON_ShutDown(Section* sec){
+    if (Py_IsInitialized()) {
+        python_event(DBG_CLEANUP);
+        Py_Finalize();
+    }
+    if (dosboxUI){
+        DBGUI_ShutDown();
+    }
+}
+
+void DEBUG_ShowMsg(char const* format,...){
+    va_list msg;
+    va_start(msg, format);
+    if (dosboxUI){
+        DEBUG_ShowMsgV(format, msg);
+    }else{
+        vprintf(format, msg);
+        printf("\n");
+    }
+    va_end(msg);
+}
+
+void PYTHON_Init(Section* sec){
+    sec->AddDestroyFunction(&PYTHON_ShutDown);
+    Section_prop * sect=static_cast<Section_prop *>(sec);
+    Py_Initialize();
+    Py_InspectFlag = true;
+    Py_SetProgramName((char*)"dosbox");
+
+    //args 'n' working dir in python paths
+    vector<string> args;
+    args.push_back(control->cmdline->GetFileName());
+    control->cmdline->FillVector(args);
+    vector<const char*> argv;
+    std::transform(args.begin(), args.end(), back_inserter(argv), [](string& s){ return s.c_str(); });
+    printf("argv[0]=%s\n", argv[0]);
+    PySys_SetArgv((int)argv.size(), (char**)argv.data());
+
+    //std imports
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("import os");
+    PyRun_SimpleString("sys.path.append(os.getcwd())");
+
+    //builtin
+    init_dbox();
+    PyRun_SimpleString("import _dbox");
+
+    //plugins path
+    string path = sect->Get_string("path");
+    if (path.empty()){
+        path = python_getscriptdir();
+    }
+    PyObject* sysPath = PySys_GetObject((char*)"path");
+    PyObject* plpath = PyString_FromString(path.c_str());
+    PyList_Append(sysPath, plpath);
+    Py_DECREF(plpath);
+
+    //python_loadscripts(path);
+
+    string ui = sect->Get_string("ui");
+    dosboxUI = true;
+    if (ui!="dosbox"){
+        if (PyImport_ImportModule(ui.c_str())){
+            dosboxUI = false;
+        }else{
+            printf("Can't load ui %s\n", ui.c_str());
+            getchar();
+        }
+    }
+    if (dosboxUI){
+        DBGUI_StartUp();
+        PyRun_SimpleString("sys.stdout=sys.stderr=_dbox.CDosboxLog(); print sys.version");
+    }
+}
+
+
 

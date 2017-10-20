@@ -48,17 +48,17 @@ static list<string>::iterator logBuffPos = logBuff.end();
 static _LogGroup loggrp[LOG_MAX]={{"",true},{0,false}};
 static FILE* debuglog;
 
-extern int old_cursor_state;
+int old_cursor_state;
 
 
 
-void DEBUG_ShowMsg(char const* format,...) {
+void DEBUG_ShowMsgV(char const* format, va_list msg) {
 	
 	char buf[512];
-	va_list msg;
-	va_start(msg,format);
-	vsprintf(buf,format,msg);
-	va_end(msg);
+	//va_list msg;
+	//va_start(msg,format);
+	vsnprintf(buf, 512, format, msg);
+	//va_end(msg);
 
 	/* Add newline if not present */
 	Bitu len=strlen(buf);
@@ -265,7 +265,10 @@ void LOG_StartUp(void) {
 //	MSG_Add("LOG_CONFIGFILE_HELP","Logging related options for the debugger.\n");
 }
 
-
+void DBGUI_ShutDown(void){
+    curs_set(old_cursor_state);
+    endwin();
+}
 
 
 void DBGUI_StartUp(void) {

@@ -30,6 +30,10 @@
 
 
 void DBGUI_StartUp(void);
+void DBGUI_ShutDown(void);
+void DEBUG_ShowMsg(char const* format,...);
+void DEBUG_ShowMsgV(char const* , va_list);
+
 
 struct DBGBlock {
 	WINDOW * win_main;					/* The Main Window */

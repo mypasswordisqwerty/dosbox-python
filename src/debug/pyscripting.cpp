@@ -442,6 +442,9 @@ extern DOS_File * Files[DOS_FILES];
 void
 python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off)
 {
+
+    DEBUG_ShowMsg("EXEC: %s @%04X psp:%04X csip:%04X:%04X", file, loadseg, pspseg, seg, off);
+    return;
     Bit8u drive;char fullname[DOS_PATHLENGTH];
     if (!DOS_MakeName(file, fullname, &drive) ||
             strncmp(Drives[drive]->GetInfo(),"local directory",15)) {
@@ -469,11 +472,19 @@ python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off)
 	}
 }
 
-bool
-python_clicmd(const char *cmd)
+bool PYTHON_Command(const char *cmd)
 {
     int res = PyRun_SimpleString(cmd);
     return res==0;
+}
+
+bool PYTHON_IsDosboxUI(void){
+    return dosboxUI;
+}
+
+Bitu PYTHON_Loop(bool& dbui){
+    dbui = dosboxUI;
+    return (Bitu)dbox_loop();
 }
 
 
@@ -510,19 +521,16 @@ void PYTHON_Init(Section* sec){
     vector<string> args;
     args.push_back(control->cmdline->GetFileName());
     control->cmdline->FillVector(args);
+    string p = "--ui=";
+    p += sect->Get_string("ui");
+    args.push_back(p);
+    p = "--loglevel=";
+    p += sect->Get_string("loglevel");
+    args.push_back(p);
+
     vector<const char*> argv;
     std::transform(args.begin(), args.end(), back_inserter(argv), [](string& s){ return s.c_str(); });
-    printf("argv[0]=%s\n", argv[0]);
     PySys_SetArgv((int)argv.size(), (char**)argv.data());
-
-    //std imports
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("import os");
-    PyRun_SimpleString("sys.path.append(os.getcwd())");
-
-    //builtin
-    init_dbox();
-    PyRun_SimpleString("import _dbox");
 
     //plugins path
     string path = sect->Get_string("path");
@@ -534,21 +542,12 @@ void PYTHON_Init(Section* sec){
     PyList_Append(sysPath, plpath);
     Py_DECREF(plpath);
 
-    //python_loadscripts(path);
-
-    string ui = sect->Get_string("ui");
-    dosboxUI = true;
-    if (ui!="dosbox"){
-        if (PyImport_ImportModule(ui.c_str())){
-            dosboxUI = false;
-        }else{
-            printf("Can't load ui %s\n", ui.c_str());
-            getchar();
-        }
-    }
+    //init pydosbox
+    init_dbox();
+    dosboxUI = dbox_start() == 0;
     if (dosboxUI){
         DBGUI_StartUp();
-        PyRun_SimpleString("sys.stdout=sys.stderr=_dbox.CDosboxLog(); print sys.version");
+        PyRun_SimpleString("from dosbox import *");
     }
 }
 

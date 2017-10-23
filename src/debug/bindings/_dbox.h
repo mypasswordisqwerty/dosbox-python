@@ -18,6 +18,10 @@
   #define DL_IMPORT(_T) _T
 #endif
 
+__PYX_EXTERN_C int dbox_start(void);
+__PYX_EXTERN_C int dbox_loop(void);
+__PYX_EXTERN_C int dbox_exec(char const *);
+
 __PYX_EXTERN_C char *version;
 
 #endif /* !__PYX_HAVE_API___dbox */

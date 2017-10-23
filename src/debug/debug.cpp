@@ -559,40 +559,6 @@ bool DEBUG_IntBreakpoint(Bit8u intNum)
 	return true;
 };
 
-bool DEBUG_StepOver()
-{
-	exitLoop = false;
-	PhysPt start=GetAddress(SegValue(cs),reg_eip);
-	char dline[200];Bitu size;
-	size=DasmI386(dline, start, reg_eip, cpu.code.big);
-
-	if (strstr(dline,"call") || strstr(dline,"int") || strstr(dline,"loop") || strstr(dline,"rep")) {
-		CBreakpoint::AddBreakpoint		(SegValue(cs),reg_eip+size, true);
-		CBreakpoint::ActivateBreakpoints(start, true);
-		debugging=false;
-		DrawCode();
-		DOSBOX_SetNormalLoop();
-		return true;
-	} 
-	return false;
-};
-
-Bitu DEBUG_StepInto(void){
-    exitLoop = false;
-    skipFirstInstruction = true; // for heavy debugger
-    CPU_Cycles = 1;
-    Bitu ret=(*cpudecoder)();
-    CBreakpoint::ignoreOnce = 0;
-    return ret;
-}
-
-void DEBUG_Run(){
-    debugging=false;
-    CBreakpoint::ActivateBreakpoints(SegPhys(cs)+reg_eip,true);
-    ignoreAddressOnce = SegPhys(cs)+reg_eip;
-    DOSBOX_SetNormalLoop();
-}
-
 bool DEBUG_ExitLoop(void)
 {
 #if C_HEAVY_DEBUG
@@ -1269,7 +1235,7 @@ bool ParseCommand(char* str) {
 	};
 
 #ifdef C_DEBUG_SCRIPTING
-    return python_clicmd(str);
+    return PYTHON_Command(str);
 #endif
 	return false;
 };
@@ -1449,6 +1415,41 @@ char* AnalyzeInstruction(char* inst, bool saveSelector) {
 };
 
 
+bool DEBUG_Next(void)
+{
+    exitLoop = false;
+    PhysPt start=GetAddress(SegValue(cs),reg_eip);
+    char dline[200];Bitu size;
+    size=DasmI386(dline, start, reg_eip, cpu.code.big);
+
+    if (strstr(dline,"call") || strstr(dline,"int") || strstr(dline,"loop") || strstr(dline,"rep")) {
+        CBreakpoint::AddBreakpoint        (SegValue(cs),reg_eip+size, true);
+        CBreakpoint::ActivateBreakpoints(start, true);
+        debugging=false;
+        DrawCode();
+        DOSBOX_SetNormalLoop();
+        return true;
+    }
+    return false;
+};
+
+Bitu DEBUG_Step(void){
+    exitLoop = false;
+    skipFirstInstruction = true; // for heavy debugger
+    CPU_Cycles = 1;
+    Bitu ret=(*cpudecoder)();
+    SetCodeWinStart();
+    CBreakpoint::ignoreOnce = 0;
+    return ret;
+}
+
+void DEBUG_Continue(void){
+    debugging=false;
+    CBreakpoint::ActivateBreakpoints(SegPhys(cs)+reg_eip,true);
+    ignoreAddressOnce = SegPhys(cs)+reg_eip;
+    DOSBOX_SetNormalLoop();
+}
+
 Bit32u DEBUG_CheckKeys(void) {
 	Bits ret=0;
 	int key=getch();
@@ -1578,13 +1579,8 @@ Bit32u DEBUG_CheckKeys(void) {
 				codeViewData.inputPos = strlen(codeViewData.inputStr);
 				break; 
 		case KEY_F(5):	// Run Program
-                DEBUG_Run();
+                DEBUG_Continue();
 				break;
-		#ifdef C_DEBUG_SCRIPTING
-		case KEY_F(8):	// Reload scripts
-				python_loadscripts(python_getscriptdir());
-				break;
-		#endif
 		case KEY_F(9):	// Set/Remove Breakpoint
 				{	PhysPt ptr = GetAddress(codeViewData.cursorSeg,codeViewData.cursorOfs);
 					if (CBreakpoint::IsBreakpoint(ptr)) {
@@ -1598,15 +1594,12 @@ Bit32u DEBUG_CheckKeys(void) {
 				}
 				break;
 		case KEY_F(10):	// Step over inst
-				if (DEBUG_StepOver()) return 0;
-				else {
-                    ret = DEBUG_StepInto();
-                    SetCodeWinStart();
-				}
-				break;
+				if (DEBUG_Next())
+                    return 0;
+                //ret = DEBUG_Step();
+				//break;
 		case KEY_F(11):	// trace into
-                ret = DEBUG_StepInto();
-                SetCodeWinStart();
+                ret = DEBUG_Step();
 				break;
 		case 0x0A: //Parse typed Command
 				codeViewData.inputStr[MAXCMDLEN] = '\0';
@@ -1689,6 +1682,11 @@ Bitu DEBUG_Loop(void) {
 		DOSBOX_SetNormalLoop();
 		return 0;
 	}
+    bool dosboxUI = false;
+    Bitu ret = PYTHON_Loop(dosboxUI);
+    if (!dosboxUI || ret!=0){
+        return ret;
+    }
 	return DEBUG_CheckKeys();
 }
 

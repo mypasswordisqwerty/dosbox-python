@@ -391,13 +391,12 @@
 		523635081F35169200C3CEEE /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		5236EDC21F9AA4E50094B131 /* _dbox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = _dbox.cpp; sourceTree = "<group>"; };
 		5236EDC31F9AA4E50094B131 /* _dbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _dbox.h; sourceTree = "<group>"; };
+		524A3EB81F9E883C0087F684 /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../python; sourceTree = "<group>"; };
 		52A52CF81F9678A000939B61 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		52A52CF91F9678E900939B61 /* debug.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = debug.hpp; sourceTree = "<group>"; };
 		52A52CFA1F9678E900939B61 /* pyscripting.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pyscripting.cpp; sourceTree = "<group>"; };
 		52A52CFB1F9678EA00939B61 /* debug_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = debug_api.h; sourceTree = "<group>"; };
-		52A7800C1F9971FC008C6CCF /* __init__.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = __init__.py; sourceTree = "<group>"; };
-		52A7800D1F99721A008C6CCF /* util.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = util.py; sourceTree = "<group>"; };
-		52A7800E1F99784B008C6CCF /* _dbox.pyx */ = {isa = PBXFileReference; lastKnownFileType = text; path = _dbox.pyx; sourceTree = "<group>"; };
+		52A7800E1F99784B008C6CCF /* _dbox.pyx */ = {isa = PBXFileReference; lastKnownFileType = text; path = _dbox.pyx; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.python; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -420,7 +419,7 @@
 		5236316E1F350F9F00C3CEEE = {
 			isa = PBXGroup;
 			children = (
-				52A7800A1F9971FC008C6CCF /* python */,
+				524A3EB81F9E883C0087F684 /* python */,
 				52A52CF81F9678A000939B61 /* config.h */,
 				523634CE1F35107700C3CEEE /* include */,
 				523631811F350FD200C3CEEE /* src */,
@@ -842,24 +841,6 @@
 				52A7800E1F99784B008C6CCF /* _dbox.pyx */,
 			);
 			path = bindings;
-			sourceTree = "<group>";
-		};
-		52A7800A1F9971FC008C6CCF /* python */ = {
-			isa = PBXGroup;
-			children = (
-				52A7800B1F9971FC008C6CCF /* dosbox */,
-			);
-			name = python;
-			path = ../python;
-			sourceTree = "<group>";
-		};
-		52A7800B1F9971FC008C6CCF /* dosbox */ = {
-			isa = PBXGroup;
-			children = (
-				52A7800C1F9971FC008C6CCF /* __init__.py */,
-				52A7800D1F99721A008C6CCF /* util.py */,
-			);
-			path = dosbox;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

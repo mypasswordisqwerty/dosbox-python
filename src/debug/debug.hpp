@@ -3,7 +3,7 @@
 Bit32u GetAddress(Bit16u seg, Bit32u offset);
 
 
-enum EBreakpoint { BKPNT_UNKNOWN, BKPNT_PHYSICAL, BKPNT_INTERRUPT, BKPNT_MEMORY, BKPNT_REGISTER, BKPNT_MEMORY_PROT, BKPNT_MEMORY_LINEAR };
+enum EBreakpoint { BKPNT_UNKNOWN, BKPNT_PHYSICAL, BKPNT_INTERRUPT, BKPNT_MEMORY, BKPNT_REGISTER, BKPNT_MEMORY_PROT, BKPNT_MEMORY_LINEAR, BKPNT_LOAD };
 enum ERegister { REG_UNKNOWN, REG_EAX, REG_EBX, REG_ECX, REG_EDX, REG_ESI, REG_EDI, REG_EBP, REG_ESP, REG_EIP };
 
 class CBreakpoint
@@ -36,6 +36,7 @@ public:
 	static CBreakpoint*		AddIntBreakpoint	(Bit8u intNum, Bit16u ah, bool once);
 	static CBreakpoint*		AddMemBreakpoint	(Bit16u seg, Bit32u off);
 	static CBreakpoint*		AddRegBreakpoint	(char *reg, Bit16u val);
+    static CBreakpoint*     AddLoadBreakpoint    () {    CBreakpoint* bp = new CBreakpoint(); bp->type = BKPNT_LOAD; BPoints.push_front(bp); return bp;}
 	static void				ActivateBreakpoints	(PhysPt adr, bool activate);
 	static bool				CheckBreakpoint		(PhysPt adr);
 	static bool				CheckBreakpoint		(Bitu seg, Bitu off);

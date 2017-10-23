@@ -192,23 +192,6 @@ python_break(CBreakpoint *bp)
 	return ret;
 }
 
-bool
-python_log(int tick, const char *logger, char *msg)
-{
-	bool ret = true;
-	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
-		PyThreadState_Swap((*itr).interpreter);
-		current_script = &(*itr);
-		map<PyLogCbWrapper,void*>::const_iterator end = current_script->log_cbs.end();
-		for (map<PyLogCbWrapper,void*>::const_iterator it = current_script->log_cbs.begin(); it != end; ++it)
-			// if any of the callbacks return False (None doesn't count),
-			// prevent normal output of the message in debug UI
-			if(!it->first(tick, logger, msg, it->second))
-				ret = false;
-	}
-	return ret;
-}
-
 void
 python_register_break_cb(PyBreakCbWrapper cb, void *p)
 {
@@ -236,18 +219,6 @@ python_unregister_event_cb(int evt, PyVoidCb cb, void *p)
 }
 
 void
-python_register_log_cb(PyLogCbWrapper cb, void *p)
-{
-	current_script->log_cbs[cb] = p;
-}
-
-void
-python_unregister_log_cb(PyLogCbWrapper cb, void *p)
-{
-	current_script->log_cbs.erase(cb);
-}
-
-void
 python_register_exec_cb(PyCChrWrap wrap, void *cb)
 {
 	current_script->exec_cb = cb;
@@ -257,20 +228,6 @@ void
 python_register_clicmd_cb(PyCChrWrap wrap, void *cb)
 {
 	current_script->clicmd_cb = cb;
-}
-
-PyObject*
-python_registers()
-{
-	return Py_BuildValue("IIIIIIIII", reg_eax,reg_ebx,reg_ecx,reg_edx,
-		reg_esi, reg_edi, reg_esp,reg_ebp,reg_eip);
-}
-
-PyObject*
-python_segments()
-{
-	return Py_BuildValue("IIIIII", SegValue(cs), SegValue(ds),
-		SegValue(es), SegValue(fs), SegValue(gs), SegValue(ss));
 }
 
 std::list<CBreakpoint>

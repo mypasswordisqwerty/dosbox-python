@@ -24,7 +24,7 @@ bool ParseCommand(char* str);
 Bitu DEBUG_EnableDebugger();
 Bitu DasmI386(char* buffer, PhysPt pc, Bitu cur_ip, bool bit32);
 void DEBUG_Continue(void);
-bool DEBUG_Next(void);
+Bitu DEBUG_Next(void);
 Bitu DEBUG_Step(void);
 bool PYTHON_IsDosboxUI(void);
 Bitu PYTHON_Loop(bool& dosboxUI);
@@ -68,7 +68,6 @@ std::string python_getscriptdir();
 int python_loadscripts(std::string path);
 void python_event(int evt);
 bool python_break(CBreakpoint *bp);
-bool python_log(int tick, const char *logger, char *msg);
 void python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off);
 
 void python_register_break_cb(PyBreakCbWrapper cb, void *data);
@@ -79,11 +78,7 @@ void python_unregister_event_cb(int evt, PyVoidCb cb, void *p);
 void python_register_clicmd_cb(PyCChrWrap wrap, void *cb);
 void python_register_exec_cb(PyCChrWrap cb, void *p);
 void python_unregister_exec_cb(PyCChrWrap cb, void *p);
-void python_register_log_cb(PyLogCbWrapper cb, void *p);
-void python_unregister_log_cb(PyLogCbWrapper cb, void *p);
 
-PyObject* python_registers();
-PyObject* python_segments();
 std::list<CBreakpoint> python_bpoints();
 char* python_dasm(Bit16u seg, Bit32u ofs, Bitu eip);
 PyObject* python_mcbs();

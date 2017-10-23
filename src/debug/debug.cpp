@@ -1415,7 +1415,17 @@ char* AnalyzeInstruction(char* inst, bool saveSelector) {
 };
 
 
-bool DEBUG_Next(void)
+Bitu DEBUG_Step(void){
+    exitLoop = false;
+    skipFirstInstruction = true; // for heavy debugger
+    CPU_Cycles = 1;
+    Bitu ret=(*cpudecoder)();
+    SetCodeWinStart();
+    CBreakpoint::ignoreOnce = 0;
+    return ret;
+}
+
+Bitu DEBUG_Next(void)
 {
     exitLoop = false;
     PhysPt start=GetAddress(SegValue(cs),reg_eip);
@@ -1428,20 +1438,12 @@ bool DEBUG_Next(void)
         debugging=false;
         DrawCode();
         DOSBOX_SetNormalLoop();
-        return true;
+        return 0;
     }
-    return false;
+    return DEBUG_Step();
 };
 
-Bitu DEBUG_Step(void){
-    exitLoop = false;
-    skipFirstInstruction = true; // for heavy debugger
-    CPU_Cycles = 1;
-    Bitu ret=(*cpudecoder)();
-    SetCodeWinStart();
-    CBreakpoint::ignoreOnce = 0;
-    return ret;
-}
+
 
 void DEBUG_Continue(void){
     debugging=false;
@@ -1594,10 +1596,8 @@ Bit32u DEBUG_CheckKeys(void) {
 				}
 				break;
 		case KEY_F(10):	// Step over inst
-				if (DEBUG_Next())
-                    return 0;
-                //ret = DEBUG_Step();
-				//break;
+                ret = DEBUG_Next();
+				break;
 		case KEY_F(11):	// trace into
                 ret = DEBUG_Step();
 				break;

@@ -6,6 +6,19 @@ cdef extern from "../debug_api.h":
     cdef void DEBUG_Continue()
     cdef void DEBUG_Next()
     cdef void DEBUG_Step()
+    ctypedef enum SegNames:
+        es = 0, cs, ss, ds, fs, gs
+    cdef unsigned short SegValue(SegNames s)
+    cdef unsigned int reg_eax
+    cdef unsigned int reg_ebx
+    cdef unsigned int reg_ecx
+    cdef unsigned int reg_edx
+    cdef unsigned int reg_esi
+    cdef unsigned int reg_edi
+    cdef unsigned int reg_esp
+    cdef unsigned int reg_ebp
+    cdef unsigned int reg_eip
+    cdef unsigned long reg_flags
 
 cdef public char * version = "0.1"
 
@@ -54,3 +67,8 @@ def next():
 
 def step():
     DEBUG_Step()
+
+
+def regs():
+    return [reg_eax, reg_ecx, reg_edx, reg_ebx, reg_esp, reg_ebp, reg_esi, reg_edi, reg_eip,
+            reg_flags, SegValue(cs), SegValue(ss), SegValue(ds), SegValue(es), SegValue(fs), SegValue(gs)]

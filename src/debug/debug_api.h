@@ -30,7 +30,7 @@ bool PYTHON_IsDosboxUI(void);
 Bitu PYTHON_Loop(bool& dosboxUI);
 bool PYTHON_Command(const char *cmd);
 bool PYTHON_Break(CBreakpoint *bp);
-char* PYTHON_Dasm(PhysPt ptr, Bitu eip);
+char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &sz);
 
 // -- pyscripting.cpp
 

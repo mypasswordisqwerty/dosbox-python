@@ -22,7 +22,7 @@ cdef extern from "debug_api.h":
     cdef void DEBUG_Next()
     cdef void DEBUG_Step()
     cdef int PYTHON_Command(const char * cmd)
-    cdef char * PYTHON_Dasm(unsigned int ptr, unsigned int eip)
+    cdef char * PYTHON_Dasm(unsigned int ptr, unsigned int eip, int & size)
 
 cdef public char * version = "0.1"
 
@@ -95,4 +95,7 @@ def memory(int loc, int size):
     return ret
 
 
-def disasm(int loc, int eip): return PYTHON_Dasm(loc, eip)
+def disasm(int loc, int eip):
+    cdef int sz = 0
+    val = PYTHON_Dasm(loc, eip, sz)
+    return (val, sz)

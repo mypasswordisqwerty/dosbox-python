@@ -1,20 +1,13 @@
 
-from dosbox import *
-from dosbox.classes import UI
+from dosbox import Dosbox, UI
 import readline
 import logging
 import code
-logger = logging.getLogger("dosbox.pureui")
 
 
 class PureUI(UI):
 
-    def __init__(self):
-        UI.__init__(self)
-        logging.debug("inited")
-
     def loop(self):
-        logging.debug("loop")
         try:
             ii = code.InteractiveInterpreter(globals())
             s = raw_input(">>> ")
@@ -23,4 +16,4 @@ class PureUI(UI):
         except SystemExit:
             Dosbox().exit()
 
-Dosbox().ui = PureUI()
+currentUI = PureUI()

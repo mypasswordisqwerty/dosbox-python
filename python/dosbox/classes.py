@@ -1,3 +1,5 @@
+import dosbox
+
 
 class Singleton(type):
     _instances = {}
@@ -13,18 +15,18 @@ class UI:
     """ UI base class """
 
     def __init__(self):
-        pass
+        dosbox.Dosbox().ui = self
 
     def loop(self):
         """ input and process commands here """
         raise NotImplementedError()
 
 
-class Dasm:
+class Disasm:
     """ Disassembler base class """
 
     def __init__(self):
-        pass
+        dosbox.Dosbox().dasm = self
 
     def disasm(self, loc, size, eip):
         """ disassemble """

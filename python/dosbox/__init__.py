@@ -1,5 +1,5 @@
 import _dbox
-from classes import Singleton
+from classes import *
 import sys
 import os
 import argparse
@@ -20,6 +20,7 @@ class Dosbox(object):
 
     def __create__(self):
         self.ui = None
+        self.dasm = None
         try:
             sys.path.append(os.getcwd())
             parser = argparse.ArgumentParser()
@@ -33,9 +34,17 @@ class Dosbox(object):
             logger.setLevel(levels[args.loglevel])
             logger.debug("initing w args: %s %s", str(args), sys.argv)
 
-            if args.ui and args.ui != 'dosbox':
-                import importlib
-                sys.modules[args.ui] = importlib.import_module(args.ui)
+            import importlib
+            ui = args.ui
+            if ui and ui != "dosbox":
+                if not ui.startswith("ui."):
+                    ui = "ui." + ui
+                sys.modules[ui] = importlib.import_module(ui)
+
+            dasm = 'internal' if args.dasm == 'dosbox' else args.dasm
+            if not dasm.startswith("disasm."):
+                dasm = "disasm." + dasm
+            sys.modules[dasm] = importlib.import_module(dasm)
 
             if self.ui is None:
                 sys.stdout = sys.stderr = _dbox.CDosboxLog()
@@ -70,8 +79,10 @@ class Dosbox(object):
         return _dbox.memory(tolinear(addr), size)
 
     def disasm(self, addr=None, size=10):
-        ip = var('eip')
-        addr = addr or [ip, var('cs')]
-        return _dbox.disasm(tolinear(addr), ip)
+        if self.dasm is None:
+            raise Exception("Disassembler not inited")
+        if addr is None:
+            addr = [var('ip'), var('cs')]
+        return self.dasm.disasm(tolinear(addr), size, var('eip'))
 
     def __getattr__(self, attr): return var(attr)

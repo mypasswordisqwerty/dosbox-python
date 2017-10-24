@@ -1169,6 +1169,7 @@ static const char __pyx_k_s[] = "s";
 static const char __pyx_k_v[] = "v";
 static const char __pyx_k__2[] = "\n";
 static const char __pyx_k__4[] = ": ";
+static const char __pyx_k_sz[] = "sz";
 static const char __pyx_k_ui[] = "ui";
 static const char __pyx_k_buf[] = "buf";
 static const char __pyx_k_chr[] = "chr";
@@ -1177,6 +1178,7 @@ static const char __pyx_k_eip[] = "eip";
 static const char __pyx_k_end[] = "end";
 static const char __pyx_k_loc[] = "loc";
 static const char __pyx_k_ret[] = "ret";
+static const char __pyx_k_val[] = "val";
 static const char __pyx_k_cont[] = "cont";
 static const char __pyx_k_dbox[] = "_dbox";
 static const char __pyx_k_exit[] = "exit";
@@ -1265,9 +1267,11 @@ static PyObject *__pyx_n_s_s;
 static PyObject *__pyx_n_s_self;
 static PyObject *__pyx_n_s_size;
 static PyObject *__pyx_n_s_step;
+static PyObject *__pyx_n_s_sz;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_ui;
 static PyObject *__pyx_n_s_v;
+static PyObject *__pyx_n_s_val;
 static PyObject *__pyx_n_s_write;
 static PyObject *__pyx_pf_5_dbox_10CDosboxLog___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5_dbox_10CDosboxLog_2write(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_s); /* proto */
@@ -2595,7 +2599,9 @@ static PyObject *__pyx_pf_5_dbox_10memory(CYTHON_UNUSED PyObject *__pyx_self, in
 /* "_dbox.pyx":98
  * 
  * 
- * def disasm(int loc, int eip): return PYTHON_Dasm(loc, eip)             # <<<<<<<<<<<<<<
+ * def disasm(int loc, int eip):             # <<<<<<<<<<<<<<
+ *     cdef int sz = 0
+ *     val = PYTHON_Dasm(loc, eip, sz)
  */
 
 /* Python wrapper */
@@ -2661,20 +2667,67 @@ static PyObject *__pyx_pw_5_dbox_13disasm(PyObject *__pyx_self, PyObject *__pyx_
 }
 
 static PyObject *__pyx_pf_5_dbox_12disasm(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_loc, int __pyx_v_eip) {
+  int __pyx_v_sz;
+  char *__pyx_v_val;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("disasm", 0);
+
+  /* "_dbox.pyx":99
+ * 
+ * def disasm(int loc, int eip):
+ *     cdef int sz = 0             # <<<<<<<<<<<<<<
+ *     val = PYTHON_Dasm(loc, eip, sz)
+ *     return (val, sz)
+ */
+  __pyx_v_sz = 0;
+
+  /* "_dbox.pyx":100
+ * def disasm(int loc, int eip):
+ *     cdef int sz = 0
+ *     val = PYTHON_Dasm(loc, eip, sz)             # <<<<<<<<<<<<<<
+ *     return (val, sz)
+ */
+  __pyx_v_val = PYTHON_Dasm(__pyx_v_loc, __pyx_v_eip, __pyx_v_sz);
+
+  /* "_dbox.pyx":101
+ *     cdef int sz = 0
+ *     val = PYTHON_Dasm(loc, eip, sz)
+ *     return (val, sz)             # <<<<<<<<<<<<<<
+ */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyBytes_FromString(PYTHON_Dasm(__pyx_v_loc, __pyx_v_eip)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBytes_FromString(__pyx_v_val); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_sz); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_2);
   __pyx_t_1 = 0;
+  __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_3;
+  __pyx_t_3 = 0;
   goto __pyx_L0;
+
+  /* "_dbox.pyx":98
+ * 
+ * 
+ * def disasm(int loc, int eip):             # <<<<<<<<<<<<<<
+ *     cdef int sz = 0
+ *     val = PYTHON_Dasm(loc, eip, sz)
+ */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_AddTraceback("_dbox.disasm", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -2769,9 +2822,11 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_self, __pyx_k_self, sizeof(__pyx_k_self), 0, 0, 1, 1},
   {&__pyx_n_s_size, __pyx_k_size, sizeof(__pyx_k_size), 0, 0, 1, 1},
   {&__pyx_n_s_step, __pyx_k_step, sizeof(__pyx_k_step), 0, 0, 1, 1},
+  {&__pyx_n_s_sz, __pyx_k_sz, sizeof(__pyx_k_sz), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_ui, __pyx_k_ui, sizeof(__pyx_k_ui), 0, 0, 1, 1},
   {&__pyx_n_s_v, __pyx_k_v, sizeof(__pyx_k_v), 0, 0, 1, 1},
+  {&__pyx_n_s_val, __pyx_k_val, sizeof(__pyx_k_val), 0, 0, 1, 1},
   {&__pyx_n_s_write, __pyx_k_write, sizeof(__pyx_k_write), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -2910,12 +2965,14 @@ static int __Pyx_InitCachedConstants(void) {
   /* "_dbox.pyx":98
  * 
  * 
- * def disasm(int loc, int eip): return PYTHON_Dasm(loc, eip)             # <<<<<<<<<<<<<<
+ * def disasm(int loc, int eip):             # <<<<<<<<<<<<<<
+ *     cdef int sz = 0
+ *     val = PYTHON_Dasm(loc, eip, sz)
  */
-  __pyx_tuple__19 = PyTuple_Pack(2, __pyx_n_s_loc, __pyx_n_s_eip); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_tuple__19 = PyTuple_Pack(4, __pyx_n_s_loc, __pyx_n_s_eip, __pyx_n_s_sz, __pyx_n_s_val); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__19);
   __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_dbox_pyx, __pyx_n_s_disasm, 98, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_dbox_pyx, __pyx_n_s_disasm, 98, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -3079,7 +3136,7 @@ static int __pyx_pymod_exec__dbox(PyObject *__pyx_pyinit_module)
   #endif
 
   /* "_dbox.pyx":27
- *     cdef char * PYTHON_Dasm(unsigned int ptr, unsigned int eip)
+ *     cdef char * PYTHON_Dasm(unsigned int ptr, unsigned int eip, int & size)
  * 
  * cdef public char * version = "0.1"             # <<<<<<<<<<<<<<
  * 
@@ -3233,7 +3290,9 @@ static int __pyx_pymod_exec__dbox(PyObject *__pyx_pyinit_module)
   /* "_dbox.pyx":98
  * 
  * 
- * def disasm(int loc, int eip): return PYTHON_Dasm(loc, eip)             # <<<<<<<<<<<<<<
+ * def disasm(int loc, int eip):             # <<<<<<<<<<<<<<
+ *     cdef int sz = 0
+ *     val = PYTHON_Dasm(loc, eip, sz)
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5_dbox_13disasm, NULL, __pyx_n_s_dbox); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);

@@ -911,7 +911,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"BUILDING PYX\"\ncd ${SCRIPT_INPUT_FILE_0}\ncython --cplus ./_dbox.pyx";
+			shellScript = "cd ${SCRIPT_INPUT_FILE_0}\ncython --cplus ./_dbox.pyx";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

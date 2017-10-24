@@ -376,12 +376,14 @@ void DOSBOX_Init(void) {
     secprop=control->AddSection_prop("python", &PYTHON_Init);
     Pstring = secprop->Add_path("path", Property::Changeable::OnlyAtStart, "");
     Pstring->Set_help("Directory for python scripts.");
-    Pstring = secprop->Add_path("ui", Property::Changeable::OnlyAtStart, "dosbox");
-    Pstring->Set_help("Debugger UI module.");
     const char* loglevels[] = { "debug", "info", "warning", "error", 0 };
     Pstring = secprop->Add_string("loglevel", Property::Changeable::OnlyAtStart, "info");
     Pstring->Set_values(loglevels);
     Pstring->Set_help("Python log level.");
+    Pstring = secprop->Add_string("ui", Property::Changeable::OnlyAtStart, "dosbox");
+    Pstring->Set_help("Debugger UI module.");
+    Pstring = secprop->Add_string("dasm", Property::Changeable::OnlyAtStart, "dosbox");
+    Pstring->Set_help("Debugger disassembler module.");
 #endif
 
 

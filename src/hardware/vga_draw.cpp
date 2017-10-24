@@ -829,10 +829,6 @@ static void VGA_VerticalTimer(Bitu /*val*/) {
 	if (vga.draw.vga_override || !RENDER_StartUpdate())
 		return;
 
-	#ifdef C_DEBUG_SCRIPTING
-	python_event(DBG_VSYNC);
-	#endif
-
 	vga.draw.address_line = vga.config.hlines_skip;
 	if (IS_EGAVGA_ARCH) {
 		vga.draw.split_line = (Bitu)((vga.config.line_compare+1)/vga.draw.lines_scaled);

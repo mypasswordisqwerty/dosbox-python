@@ -6,100 +6,16 @@
 #include "debug_api.h"
 #include "setup.h"
 #include "debug_inc.h"
+#include <signal.h>
 #include "bindings/_dbox.h"
 
-list<t_pyscript> scripts;
-t_pyscript *current_script = NULL;
 bool dosboxUI = false;
-
-char save_error_type[1024], save_error_info[1024], exec_filename[13];
-
-void 
-PyerrorHandler()
-{
-   PyObject *errobj, *errdata, *errtraceback, *pystring;
- 
-   PyErr_Fetch(&errobj, &errdata, &errtraceback);
-   PyErr_NormalizeException(&errobj, &errdata, &errtraceback);
- 
-   pystring = NULL;
-   if (errobj != NULL &&
-      (pystring = PyObject_Str(errobj)) != NULL &&     /* str(object) */
-      (PyString_Check(pystring))
-      )
-       strcpy(save_error_type, PyString_AsString(pystring));
-   else
-       strcpy(save_error_type, "<unknown exception type>");
-   Py_XDECREF(pystring);
- 
-   pystring = NULL;
-   if (errdata != NULL &&
-      (pystring = PyObject_Str(errdata)) != NULL &&
-      (PyString_Check(pystring))
-      )
-       strcpy(save_error_info, PyString_AsString(pystring));
-   else
-       strcpy(save_error_info, "<unknown exception data>");
-   Py_XDECREF(pystring);
-
-   DEBUG_ShowMsg("** EXCEPTION **");
-   if(errtraceback)
-     DEBUG_ShowMsg("%s:%i %s", save_error_type, ((PyTracebackObject *) errtraceback)->tb_lineno, save_error_info);
-   else
-     DEBUG_ShowMsg("%s %s", save_error_type, save_error_info);
-
-   Py_XDECREF(errobj);
-   Py_XDECREF(errdata);         /* caller owns all 3 */
-   Py_XDECREF(errtraceback);    /* already NULL'd out */
-   PyErr_Clear();
-}
-
-std::string
-python_getscriptdir()
-{
-	std::string path;
-	Cross::CreatePlatformConfigDir(path);
-	return path + "python";
-}
-
-int
-PyRun_SimpleFileErr(FILE *fp, const char *filename, void (*errhandler)())
-{
-    PyObject *m, *d, *v;
-
-    m = PyImport_AddModule("__main__");
-    if (m == NULL)
-        return -1;
-    d = PyModule_GetDict(m);
-    if (PyDict_GetItemString(d, "__file__") == NULL) {
-        PyObject *f = PyString_FromString(filename);
-        if (f == NULL)
-            return -1;
-        if (PyDict_SetItemString(d, "__file__", f) < 0) {
-            Py_DECREF(f);
-            return -1;
-        }
-        Py_DECREF(f);
-    }
-
-    v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
-                  0, NULL);
-    if (v == NULL) {
-        (*errhandler)();
-        return -1;
-    }
-    Py_DECREF(v);
-    if (Py_FlushLine())
-        PyErr_Clear();
-    return 0;
-}
 
 int
 python_loadscripts(std::string path)
 {
-    int i;
     bool is_dir;
-		const char *sdir = path.c_str();
+    const char *sdir = path.c_str();
     DEBUG_ShowMsg("Loading python scripts from %s", sdir);
     dir_information * dir;
     dir = open_directory(sdir);
@@ -108,126 +24,14 @@ python_loadscripts(std::string path)
     char filename[CROSS_LEN];
     bool testRead = read_directory_first(dir, filename, is_dir);
     for ( ; testRead; testRead = read_directory_next(dir, filename, is_dir) ) {
-			int len = strlen(filename);
+			size_t len = strlen(filename);
 			if(len > 3 && strcmp(&filename[len-3], ".py") == 0) {
-				t_pyscript script = {0};	// init callback pointers to null
-				snprintf(script.filename, CROSS_LEN, "%s/%s", sdir, filename);
-
-				script.interpreter = Py_NewInterpreter();
-				current_script = &script;
-
-				PyObject* pypath = PyFile_FromString(script.filename, "r");
-				int ret = PyRun_SimpleFileErr(PyFile_AsFile(pypath),
-                                              script.filename, PyerrorHandler);
-				Py_DECREF(pypath);
-
-				if (ret == 0) {
-					DEBUG_ShowMsg("Loaded %s\n", filename);
-				} else {
-					if(PyErr_Occurred() != NULL) {
-						PyerrorHandler();
-					}
-					Py_EndInterpreter(script.interpreter);
-					DEBUG_ShowMsg("Failed to load %s, ret=%i\n", filename, ret);
-					continue;
-				}
-
-				scripts.push_back(script);
-			}
+				//snprintf(script.filename, CROSS_LEN, "%s/%s", sdir, filename);
+                //TODO: import scripts
+            }
     }
     close_directory(dir);
     return 0;
-}
-
-map<PyVoidCb,void*> *get_callbackmap(int evt)
-{
-	map<PyVoidCb,void*> *cbs;
-	// todo: vector map?
-	switch(evt) {
-	case DBG_CLEANUP: cbs = &current_script->cleanup_cbs; break;
-	case DBG_TICK: cbs = &current_script->tick_cbs; break;
-	case DBG_VSYNC: cbs = &current_script->vsync_cbs; break;
-	case DBG_BREAK: cbs = &current_script->break_cbs; break;
-	default: return NULL;
-	}
-	return cbs;
-}
-
-void
-python_event(int evt)
-{
-	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
-		PyThreadState_Swap((*itr).interpreter);
-		current_script = &(*itr);
-
-		map<PyVoidCb,void*> cbs = *get_callbackmap(evt);
-		map<PyVoidCb,void*>::const_iterator end = cbs.end();
-		//if(evt == DBG_VSYNC && cbs.size() > 0) DEBUG_ShowMsg("%i for %s", cbs.size(), current_script->filename);
-		for (map<PyVoidCb,void*>::const_iterator it = cbs.begin(); it != end; ++it)
-			it->first(it->second);
-
-		if(evt == DBG_CLEANUP) {
-			current_script->cleanup_cbs.clear();
-			current_script->tick_cbs.clear();
-			current_script->vsync_cbs.clear();
-			current_script->break_cbs.clear();
-			current_script->breakpoint_cbs.clear();
-		}
-	}
-}
-
-bool
-python_break(CBreakpoint *bp)
-{
-	bool ret = true;
-	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
-		PyThreadState_Swap((*itr).interpreter);
-		current_script = &(*itr);
-		map<PyBreakCbWrapper,void*>::const_iterator end = current_script->breakpoint_cbs.end();
-		for (map<PyBreakCbWrapper,void*>::const_iterator it = current_script->breakpoint_cbs.begin(); it != end; ++it)
-			// if any of the callbacks return False (None doesn't count), cancel normal operation
-			if(!it->first(bp, it->second))
-				ret = false;
-	}
-	return ret;
-}
-
-void
-python_register_break_cb(PyBreakCbWrapper cb, void *p)
-{
-	current_script->breakpoint_cbs[cb] = p;
-}
-
-void
-python_unregister_break_cb(PyBreakCbWrapper cb, void *p)
-{
-	current_script->breakpoint_cbs.erase(cb);
-}
-
-void
-python_register_event_cb(int evt, PyVoidCb cb, void *p)
-{
-	map<PyVoidCb,void*> *cbs = get_callbackmap(evt);
-	(*cbs)[cb] = p;
-}
-
-void
-python_unregister_event_cb(int evt, PyVoidCb cb, void *p)
-{
-	map<PyVoidCb,void*> *cbs = get_callbackmap(evt);
-	cbs->erase(cb);
-}
-
-void
-python_register_exec_cb(PyCChrWrap wrap, void *cb)
-{
-	current_script->exec_cb = cb;
-}
-
-void
-python_register_clicmd_cb(PyCChrWrap wrap, void *cb)
-{
-	current_script->clicmd_cb = cb;
 }
 
 std::list<CBreakpoint>
@@ -243,11 +47,9 @@ python_bpoints()
 }
 
 char dasmstr[200];
-char*
-python_dasm(Bit16u seg, Bit32u ofs, Bitu eip)
+char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &size)
 {
-	PhysPt ptr = GetAddress(seg,ofs);
-	Bitu size = DasmI386(dasmstr, ptr, eip, cpu.code.big);
+	size = (int)DasmI386(dasmstr, ptr, eip, cpu.code.big);
 	return dasmstr;
 }
 
@@ -272,13 +74,16 @@ python_mcbs()
 			case MCB_DOS:
 				break;
 			default:
+                break;
 				// get memory blocks reserved by the running binary
+                /*
 				if(strlen(filename) > 0 && strncasecmp(exec_filename, filename, strlen(filename)) == 0) {
 					PyDict_SetItem(dict, Py_BuildValue("i",mcb_segment), 
 							Py_BuildValue("i",mcb.GetSize() << 4));
 				} else {
 					DEBUG_ShowMsg("%s != %s", exec_filename, filename);
 				}
+                 */
 		}
 		
     // if we've just processed the last MCB in the chain, break out of the loop
@@ -292,18 +97,6 @@ python_mcbs()
   
   return dict;
   //return Py_BuildValue("{i:i}", &addrs[0]
-}
-
-void
-python_getmemory(Bitu loc, Bit32u num, std::string *mem)
-{
-	mem->reserve(num);
-	for (Bitu x = 0; x < num; x++) {
-		Bit8u val;
-		if (mem_readb_checked(loc+x,&val)) val=0;
-		mem->push_back(val);
-	}
-	return;
 }
 
 void
@@ -417,20 +210,18 @@ python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off)
     char sysname[CROSS_LEN];
     drv->GetSystemFilename(sysname, fullname);
 
-	for (list<t_pyscript>::iterator itr = scripts.begin(); itr != scripts.end(); ++itr) {
-		current_script = &(*itr);
-		if(current_script->exec_cb != NULL) {
-			PyThreadState_Swap(current_script->interpreter);
-			//python_ExecCb(sysname, current_script->exec_cb);
-			if(PyErr_Occurred() != NULL) {
-				PyerrorHandler();
-			}
-		}
-	}
+}
+
+bool PYTHON_break(CBreakpoint *bp){
+    return false;
 }
 
 bool PYTHON_Command(const char *cmd)
 {
+    if (!cmd || !strncmp(cmd, "exit()", 6)){
+        raise(SIGTERM);
+        return true;
+    }
     int res = PyRun_SimpleString(cmd);
     return res==0;
 }
@@ -447,7 +238,6 @@ Bitu PYTHON_Loop(bool& dbui){
 
 void PYTHON_ShutDown(Section* sec){
     if (Py_IsInitialized()) {
-        python_event(DBG_CLEANUP);
         Py_Finalize();
     }
     if (dosboxUI){
@@ -462,7 +252,7 @@ void DEBUG_ShowMsg(char const* format,...){
         DEBUG_ShowMsgV(format, msg);
     }else{
         vprintf(format, msg);
-        printf("\n");
+        //printf("\n");
     }
     va_end(msg);
 }
@@ -478,12 +268,13 @@ void PYTHON_Init(Section* sec){
     vector<string> args;
     args.push_back(control->cmdline->GetFileName());
     control->cmdline->FillVector(args);
-    string p = "--ui=";
-    p += sect->Get_string("ui");
-    args.push_back(p);
-    p = "--loglevel=";
-    p += sect->Get_string("loglevel");
-    args.push_back(p);
+    Property* prop;
+    int i=0;
+    while ((prop=sect->Get_prop(i++))){
+        string p = "--" + prop->propname + "=";
+        p += string(prop->GetValue());
+        args.push_back(p);
+    }
 
     vector<const char*> argv;
     std::transform(args.begin(), args.end(), back_inserter(argv), [](string& s){ return s.c_str(); });
@@ -492,7 +283,8 @@ void PYTHON_Init(Section* sec){
     //plugins path
     string path = sect->Get_string("path");
     if (path.empty()){
-        path = python_getscriptdir();
+        Cross::CreatePlatformConfigDir(path);
+        path += "python";
     }
     PyObject* sysPath = PySys_GetObject((char*)"path");
     PyObject* plpath = PyString_FromString(path.c_str());
@@ -506,6 +298,7 @@ void PYTHON_Init(Section* sec){
         DBGUI_StartUp();
         PyRun_SimpleString("from dosbox import *");
     }
+    //TODO: load plugin scripts
 }
 
 

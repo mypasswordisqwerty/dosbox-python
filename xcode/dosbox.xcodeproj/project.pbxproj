@@ -128,8 +128,8 @@
 		523635051F35167500C3CEEE /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 523635041F35167500C3CEEE /* AudioUnit.framework */; };
 		523635071F35167B00C3CEEE /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 523635061F35167B00C3CEEE /* AudioToolbox.framework */; };
 		523635091F35169200C3CEEE /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 523635081F35169200C3CEEE /* libz.tbd */; };
-		5236EDC41F9AA4E50094B131 /* _dbox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5236EDC21F9AA4E50094B131 /* _dbox.cpp */; };
 		52534CCE1F5E1A6800FAE03A /* debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523631F11F350FD200C3CEEE /* debug.cpp */; };
+		5264900F1F9FA7DF00FAE9D3 /* _dbox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5264900E1F9FA7DF00FAE9D3 /* _dbox.cpp */; };
 		52A52D001F9678EA00939B61 /* pyscripting.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52A52CFA1F9678E900939B61 /* pyscripting.cpp */; };
 /* End PBXBuildFile section */
 
@@ -389,9 +389,9 @@
 		523635041F35167500C3CEEE /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		523635061F35167B00C3CEEE /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		523635081F35169200C3CEEE /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
-		5236EDC21F9AA4E50094B131 /* _dbox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = _dbox.cpp; sourceTree = "<group>"; };
 		5236EDC31F9AA4E50094B131 /* _dbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _dbox.h; sourceTree = "<group>"; };
 		524A3EB81F9E883C0087F684 /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../python; sourceTree = "<group>"; };
+		5264900E1F9FA7DF00FAE9D3 /* _dbox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = _dbox.cpp; sourceTree = "<group>"; };
 		52A52CF81F9678A000939B61 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		52A52CF91F9678E900939B61 /* debug.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = debug.hpp; sourceTree = "<group>"; };
 		52A52CFA1F9678E900939B61 /* pyscripting.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pyscripting.cpp; sourceTree = "<group>"; };
@@ -836,7 +836,7 @@
 		52A780031F996433008C6CCF /* bindings */ = {
 			isa = PBXGroup;
 			children = (
-				5236EDC21F9AA4E50094B131 /* _dbox.cpp */,
+				5264900E1F9FA7DF00FAE9D3 /* _dbox.cpp */,
 				5236EDC31F9AA4E50094B131 /* _dbox.h */,
 				52A7800E1F99784B008C6CCF /* _dbox.pyx */,
 			);
@@ -850,6 +850,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5236317E1F350F9F00C3CEEE /* Build configuration list for PBXNativeTarget "dosbox" */;
 			buildPhases = (
+				5264900D1F9FA62A00FAE9D3 /* ShellScript */,
 				523631731F350F9F00C3CEEE /* Sources */,
 				523631741F350F9F00C3CEEE /* Frameworks */,
 				523631751F350F9F00C3CEEE /* CopyFiles */,
@@ -894,6 +895,26 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5264900D1F9FA62A00FAE9D3 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../src/debug/bindings/",
+			);
+			outputPaths = (
+				"$(SRCROOT)/../src/debug/bindings/_dbox.cpp",
+				"$(SRCROOT)/../src/debug/bindings/_dbox.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo \"BUILDING PYX\"\ncd ${SCRIPT_INPUT_FILE_0}\ncython --cplus ./_dbox.pyx";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		523631731F350F9F00C3CEEE /* Sources */ = {
@@ -966,8 +987,8 @@
 				523634BE1F350FD400C3CEEE /* setup.cpp in Sources */,
 				5236341D1F350FD400C3CEEE /* fpu.cpp in Sources */,
 				523633C61F350FD400C3CEEE /* core_full.cpp in Sources */,
+				5264900F1F9FA7DF00FAE9D3 /* _dbox.cpp in Sources */,
 				523634351F350FD400C3CEEE /* disney.cpp in Sources */,
-				5236EDC41F9AA4E50094B131 /* _dbox.cpp in Sources */,
 				523634701F350FD400C3CEEE /* vga_attr.cpp in Sources */,
 				523634411F350FD400C3CEEE /* ipx.cpp in Sources */,
 				523634111F350FD400C3CEEE /* drive_iso.cpp in Sources */,

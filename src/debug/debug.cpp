@@ -346,7 +346,8 @@ bool CBreakpoint::CheckBreakpoint(Bitu seg, Bitu off)
 				bp->Activate(true);
 				return false;
 			};
-			// Found, 
+			// Found,
+            bp->Run(0);
 			if (bp->GetOnce()) {
 				// delete it, if it should only be used once
 				(BPoints.erase)(i);
@@ -355,9 +356,6 @@ bool CBreakpoint::CheckBreakpoint(Bitu seg, Bitu off)
 			} else {
 				ignoreOnce = bp;
 			};
-			#ifdef C_DEBUG_SCRIPTING
-			if(!python_break(bp)) return false;
-			#endif
 			return true;
 		} 
 #if C_HEAVY_DEBUG
@@ -381,11 +379,8 @@ bool CBreakpoint::CheckBreakpoint(Bitu seg, Bitu off)
 				if (mem_readb_checked(address,&value)) return false;
 				if (bp->GetValue() != value) {
 					// Yup, memory value changed
-					#ifdef C_DEBUG_SCRIPTING
-					if(!python_break(bp)) return false;
-					#endif
 					DEBUG_ShowMsg("DEBUG: Memory breakpoint %s: %04X:%04X - %02X -> %02X\n",(bp->GetType()==BKPNT_MEMORY_PROT)?"(Prot)":"",bp->GetSegment(),bp->GetOffset(),bp->GetValue(),value);
-					bp->SetValue(value);
+					bp->Run(value);
 					return true;
 				};		
 			} 		
@@ -418,6 +413,7 @@ bool CBreakpoint::CheckIntBreakpoint(PhysPt adr, Bit8u intNr, Bit16u ahValue)
 					return false;
 				};
 				// Found
+                bp->Run(0);
 				if (bp->GetOnce()) {
 					// delete it, if it should only be used once
 					(BPoints.erase)(i);
@@ -672,6 +668,9 @@ static void DrawRegisters(void) {
 };
 
 static void DrawCode(void) {
+    if (!PYTHON_IsDosboxUI()){
+        return;
+    }
 	bool saveSel; 
 	Bit32u disEIP = codeViewData.useEIP;
 	PhysPt start  = GetAddress(codeViewData.useCS,codeViewData.useEIP);
@@ -1698,9 +1697,6 @@ void DEBUG_Enable(bool pressed) {
 	SetCodeWinStart();
 	DEBUG_DrawScreen();
 	DOSBOX_SetLoop(&DEBUG_Loop);
-	#ifdef C_DEBUG_SCRIPTING
-	python_event(DBG_BREAK);
-	#endif
 	if(!showhelp) { 
 		showhelp=true;
 		DEBUG_ShowMsg("***| TYPE HELP (+ENTER) TO GET AN OVERVIEW OF ALL COMMANDS |***\n");
@@ -1709,6 +1705,9 @@ void DEBUG_Enable(bool pressed) {
 }
 
 void DEBUG_DrawScreen(void) {
+    if (!PYTHON_IsDosboxUI()){
+        return;
+    }
 	DrawData();
 	DrawCode();
 	DrawRegisters();

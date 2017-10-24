@@ -13,4 +13,5 @@ xcode/build
 xcuserdata
 *.xcworkspace
 *.pyc
+*.sublime*
 

@@ -1,19 +1,26 @@
 
-from dosbox import Debugger, IUI
+from dosbox import *
+from dosbox.classes import UI
 import readline
 import logging
+import code
 logger = logging.getLogger("dosbox.pureui")
 
 
-class PureUI(IUI):
+class PureUI(UI):
 
     def __init__(self):
+        UI.__init__(self)
         logging.debug("inited")
 
     def loop(self):
         logging.debug("loop")
-        s = input('>>> ')
-        exec(s)
+        try:
+            ii = code.InteractiveInterpreter(globals())
+            s = raw_input(">>> ")
+            while ii.runsource(s):
+                s += "\n" + raw_input("... ")
+        except SystemExit:
+            Dosbox().exit()
 
-
-Debugger().ui = PureUI()
+Dosbox().ui = PureUI()

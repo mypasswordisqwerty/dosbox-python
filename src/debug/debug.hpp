@@ -16,7 +16,7 @@ public:
 	void					SetInt			(Bit8u _intNr, Bit16u ah)	{ intNr = _intNr, ahValue = ah; type = BKPNT_INTERRUPT; };
 	void					SetOnce			(bool _once)				{ once = _once; };
 	void					SetType			(EBreakpoint _type)			{ type = _type; };
-	void					SetValue		(Bit16u value)				{ ahValue = value; };
+	void					Run		(Bit16u value, ...)				{ ahValue = value; };
 	void					SetReg		(ERegister _reg)		{ reg = _reg; };
 
 	bool					IsActive		(void)						{ return active; };

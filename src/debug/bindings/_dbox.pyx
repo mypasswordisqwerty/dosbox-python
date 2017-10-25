@@ -24,7 +24,6 @@ cdef extern from "debug_api.h":
     cdef int PYTHON_Command(const char * cmd)
     cdef char * PYTHON_Dasm(unsigned int ptr, unsigned int eip, int & size)
 
-cdef public char * version = "0.1"
 
 cdef _DOSBOX = None
 
@@ -54,7 +53,9 @@ cdef public int dbox_start():
         from dosbox import Dosbox
         _DOSBOX = Dosbox()
     except Exception as e:
+        import traceback
         print "FATAL: " + str(e.__class__.__name__) + ": " + str(e)
+        traceback.print_exc()
         raw_input("Press ENTER to abort...")
         exit()
     return _DOSBOX.ui is not None

@@ -36,9 +36,7 @@ char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &sz);
 
 std::string python_getscriptdir();
 int python_loadscripts(std::string path);
-void python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off);
 
-std::list<CBreakpoint> python_bpoints();
 PyObject* python_mcbs();
 void python_getvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);
 void python_setvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);

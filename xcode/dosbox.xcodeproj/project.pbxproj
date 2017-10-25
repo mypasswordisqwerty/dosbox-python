@@ -129,7 +129,9 @@
 		523635071F35167B00C3CEEE /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 523635061F35167B00C3CEEE /* AudioToolbox.framework */; };
 		523635091F35169200C3CEEE /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 523635081F35169200C3CEEE /* libz.tbd */; };
 		52534CCE1F5E1A6800FAE03A /* debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523631F11F350FD200C3CEEE /* debug.cpp */; };
+		525CB4CD1FA110B4006C7BC0 /* _break.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 525CB4CB1FA110B4006C7BC0 /* _break.cpp */; };
 		5264900F1F9FA7DF00FAE9D3 /* _dbox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5264900E1F9FA7DF00FAE9D3 /* _dbox.cpp */; };
+		526490111F9FFDAF00FAE9D3 /* breakpoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 526490101F9FFDAF00FAE9D3 /* breakpoint.cpp */; };
 		52A52D001F9678EA00939B61 /* pyscripting.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52A52CFA1F9678E900939B61 /* pyscripting.cpp */; };
 /* End PBXBuildFile section */
 
@@ -391,7 +393,11 @@
 		523635081F35169200C3CEEE /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		5236EDC31F9AA4E50094B131 /* _dbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _dbox.h; sourceTree = "<group>"; };
 		524A3EB81F9E883C0087F684 /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../python; sourceTree = "<group>"; };
+		525CB4CB1FA110B4006C7BC0 /* _break.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = _break.cpp; sourceTree = "<group>"; };
+		525CB4CC1FA110B4006C7BC0 /* _break.pyx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = _break.pyx; sourceTree = "<group>"; };
+		525CB4CE1FA11C17006C7BC0 /* _break.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _break.h; sourceTree = "<group>"; };
 		5264900E1F9FA7DF00FAE9D3 /* _dbox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = _dbox.cpp; sourceTree = "<group>"; };
+		526490101F9FFDAF00FAE9D3 /* breakpoint.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = breakpoint.cpp; sourceTree = "<group>"; };
 		52A52CF81F9678A000939B61 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		52A52CF91F9678E900939B61 /* debug.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = debug.hpp; sourceTree = "<group>"; };
 		52A52CFA1F9678E900939B61 /* pyscripting.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pyscripting.cpp; sourceTree = "<group>"; };
@@ -560,6 +566,7 @@
 				523631FB1F350FD200C3CEEE /* debug_inc.h */,
 				523631FE1F350FD200C3CEEE /* debug_win32.cpp */,
 				523632001F350FD200C3CEEE /* disasm_tables.h */,
+				526490101F9FFDAF00FAE9D3 /* breakpoint.cpp */,
 			);
 			path = debug;
 			sourceTree = "<group>";
@@ -836,6 +843,9 @@
 		52A780031F996433008C6CCF /* bindings */ = {
 			isa = PBXGroup;
 			children = (
+				525CB4CE1FA11C17006C7BC0 /* _break.h */,
+				525CB4CB1FA110B4006C7BC0 /* _break.cpp */,
+				525CB4CC1FA110B4006C7BC0 /* _break.pyx */,
 				5264900E1F9FA7DF00FAE9D3 /* _dbox.cpp */,
 				5236EDC31F9AA4E50094B131 /* _dbox.h */,
 				52A7800E1F99784B008C6CCF /* _dbox.pyx */,
@@ -906,12 +916,10 @@
 				"$(SRCROOT)/../src/debug/bindings/",
 			);
 			outputPaths = (
-				"$(SRCROOT)/../src/debug/bindings/_dbox.cpp",
-				"$(SRCROOT)/../src/debug/bindings/_dbox.h",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ${SCRIPT_INPUT_FILE_0}\ncython --cplus ./_dbox.pyx";
+			shellScript = "cd ${SCRIPT_INPUT_FILE_0}\ncython --cplus ./_dbox.pyx && cython --cplus ./_break.pyx";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -944,6 +952,7 @@
 				523633FF1F350FD400C3CEEE /* dos_ioctl.cpp in Sources */,
 				523634BC1F350FD400C3CEEE /* programs.cpp in Sources */,
 				5236342F1F350FD400C3CEEE /* adlib.cpp in Sources */,
+				525CB4CD1FA110B4006C7BC0 /* _break.cpp in Sources */,
 				523633FB1F350FD400C3CEEE /* dos_execute.cpp in Sources */,
 				5236342D1F350FD400C3CEEE /* sdlmain.cpp in Sources */,
 				523634601F350FD400C3CEEE /* misc_util.cpp in Sources */,
@@ -983,6 +992,7 @@
 				523634271F350FD400C3CEEE /* render_scalers.cpp in Sources */,
 				5236346A1F350FD400C3CEEE /* tandy_sound.cpp in Sources */,
 				523634841F350FD400C3CEEE /* vga_seq.cpp in Sources */,
+				526490111F9FFDAF00FAE9D3 /* breakpoint.cpp in Sources */,
 				523634331F350FD400C3CEEE /* dbopl.cpp in Sources */,
 				523634BE1F350FD400C3CEEE /* setup.cpp in Sources */,
 				5236341D1F350FD400C3CEEE /* fpu.cpp in Sources */,

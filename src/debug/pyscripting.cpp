@@ -8,6 +8,7 @@
 #include "debug_inc.h"
 #include <signal.h>
 #include "bindings/_dbox.h"
+#include "bindings/_break.h"
 
 bool dosboxUI = false;
 
@@ -212,7 +213,8 @@ python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off)
 
 }
 
-bool PYTHON_break(CBreakpoint *bp){
+bool PYTHON_Break(CBreakpoint *bp){
+    break_run(bp);
     return false;
 }
 
@@ -293,6 +295,7 @@ void PYTHON_Init(Section* sec){
 
     //init pydosbox
     init_dbox();
+    init_break();
     dosboxUI = dbox_start() == 0;
     if (dosboxUI){
         DBGUI_StartUp();

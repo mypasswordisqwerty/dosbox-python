@@ -476,9 +476,6 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		reg_bp=0x91c;	/* DOS internal stack begin relict */
 		SegSet16(ds,pspseg);SegSet16(es,pspseg);
 #if C_DEBUG
-#ifdef C_DEBUG_SCRIPTING
-        python_run(name, pspseg, loadseg, RealSeg(csip), RealOff(csip));
-#endif
 		/* Started from debug.com, then set breakpoint at start */
 		DEBUG_CheckExecuteBreakpoint(RealSeg(csip),RealOff(csip));
 #endif

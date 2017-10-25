@@ -5,6 +5,7 @@ import os
 import argparse
 import logging
 from util import *
+from breaks import *
 
 __version__ = "dosbox v0.1"
 

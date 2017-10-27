@@ -50,7 +50,7 @@ public:
 	static bool CheckBreakpoint(PhysPt adr);
 	static bool CheckBreakpoint(Bitu seg, Bitu off);
 	static bool CheckIntBreakpoint(PhysPt adr, Bit8u intNr, Bit16u ahValue);
-    static bool CheckExecBreakpoint(Bit16u seg, Bit32u off);
+    static bool CheckExecBreakpoint(Bit16u seg, Bit32u off, Bit16u pspseg);
 	static bool IsBreakpoint(PhysPt where);
 	static bool IsBreakpointDrawn(PhysPt where);
 	static bool DeleteBreakpoint(PhysPt where);

@@ -477,7 +477,7 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 		SegSet16(ds,pspseg);SegSet16(es,pspseg);
 #if C_DEBUG
 		/* Started from debug.com, then set breakpoint at start */
-		DEBUG_CheckExecuteBreakpoint(RealSeg(csip),RealOff(csip));
+		DEBUG_CheckExecuteBreakpoint(RealSeg(csip),RealOff(csip), pspseg);
 #endif
 		/* Add the filename to PSP and environment MCB's */
 		char stripname[8]= { 0 };Bitu index=0;

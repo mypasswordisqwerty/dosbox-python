@@ -12,41 +12,6 @@
 
 bool dosboxUI = false;
 
-int
-python_loadscripts(std::string path)
-{
-    bool is_dir;
-    const char *sdir = path.c_str();
-    DEBUG_ShowMsg("Loading python scripts from %s", sdir);
-    dir_information * dir;
-    dir = open_directory(sdir);
-    if(!dir) return 0;
-
-    char filename[CROSS_LEN];
-    bool testRead = read_directory_first(dir, filename, is_dir);
-    for ( ; testRead; testRead = read_directory_next(dir, filename, is_dir) ) {
-			size_t len = strlen(filename);
-			if(len > 3 && strcmp(&filename[len-3], ".py") == 0) {
-				//snprintf(script.filename, CROSS_LEN, "%s/%s", sdir, filename);
-                //TODO: import scripts
-            }
-    }
-    close_directory(dir);
-    return 0;
-}
-
-std::list<CBreakpoint>
-python_bpoints()
-{
-	std::list<CBreakpoint> ret;
-	std::list<CBreakpoint*>::iterator i;
-	for(i=CBreakpoint::BPoints.begin(); i != CBreakpoint::BPoints.end(); i++) {
-		CBreakpoint *bp = (*i);
-		ret.push_back(*bp);
-	}
-	return ret;
-}
-
 char dasmstr[200];
 char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &size)
 {
@@ -185,34 +150,6 @@ python_vars()
 	return ret;
 }
 
-#include <libgen.h>
-#include "../dos/drives.h"
-
-extern DOS_File * Files[DOS_FILES];
-
-void
-python_run(char *file, Bit16u pspseg, Bit16u loadseg, Bit16u seg, Bit32u off)
-{
-
-    DEBUG_ShowMsg("EXEC: %s @%04X psp:%04X csip:%04X:%04X", file, loadseg, pspseg, seg, off);
-    return;
-    Bit8u drive;char fullname[DOS_PATHLENGTH];
-    if (!DOS_MakeName(file, fullname, &drive) ||
-            strncmp(Drives[drive]->GetInfo(),"local directory",15)) {
-        return;
-    }
-
-    localDrive *drv = dynamic_cast<localDrive*>(Drives[drive]);
-    if (drv == NULL) {
-        DEBUG_ShowMsg("Drive not found");
-        return;
-    }
-
-    char sysname[CROSS_LEN];
-    drv->GetSystemFilename(sysname, fullname);
-
-}
-
 bool PYTHON_Break(CBreakpoint *bp){
     break_run(bp);
     return false;
@@ -301,7 +238,6 @@ void PYTHON_Init(Section* sec){
         DBGUI_StartUp();
         PyRun_SimpleString("from dosbox import *");
     }
-    //TODO: load plugin scripts
 }
 
 

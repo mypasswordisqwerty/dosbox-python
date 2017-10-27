@@ -1721,9 +1721,9 @@ private:
 	bool	active;
 };
 
-void DEBUG_CheckExecuteBreakpoint(Bit16u seg, Bit32u off)
+void DEBUG_CheckExecuteBreakpoint(Bit16u seg, Bit32u off, Bit16u pspseg)
 {
-    bool hasbreak = CBreakpoint::CheckExecBreakpoint(seg, off);
+    bool hasbreak = CBreakpoint::CheckExecBreakpoint(seg, off, pspseg);
 	if ((pDebugcom && pDebugcom->IsActive()) || hasbreak) {
 		CBreakpoint::AddBreakpoint(seg,off,true);		
 		CBreakpoint::ActivateBreakpoints(SegPhys(cs)+reg_eip,true);	

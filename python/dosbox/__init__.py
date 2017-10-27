@@ -6,6 +6,7 @@ import argparse
 import logging
 from util import *
 from breaks import *
+from context import *
 
 __version__ = "dosbox v0.1"
 
@@ -22,6 +23,8 @@ class Dosbox(object):
     def __create__(self):
         self.ui = None
         self.dasm = None
+        self.callbacks = {}
+        self.ctx = Context()
         try:
             sys.path.append(os.getcwd())
             parser = argparse.ArgumentParser()
@@ -31,9 +34,12 @@ class Dosbox(object):
             parser.add_argument('--dasm', default="dosbox")
             args = parser.parse_args()
 
+            self.path = args.path
             levels = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING, "error": logging.ERROR}
             logger.setLevel(levels[args.loglevel])
             logger.debug("initing w args: %s %s", str(args), sys.argv)
+
+            self.loadPlugins(globals())
 
             import importlib
             ui = args.ui
@@ -55,35 +61,64 @@ class Dosbox(object):
             raw_input("Press Enter to continue...")
             sys.stdout = sys.stderr = _dbox.CDosboxLog()
 
+    def loadPlugins(self, glob):
+        for x in os.listdir(self.path):
+            fname = os.path.join(self.path, x)
+            if os.path.isfile(fname) and fname.endswith(".py"):
+                glob[x[:-3]] = __import__(x[:-3])
+
     def loop(self):
-        setRegs(_dbox.regs())
+        self.ctx.updateRegs(_dbox.regs())
+        cont = False
+        torun = self.callbacks
+        self.callbacks = {}
+        try:
+            for x in torun:
+                if x(**torun[x]) == True:
+                    cont = True
+        except Exception as e:
+            logger.error(str(e), exc_info=1)
+            cont = False
+        if cont:
+            self.cont()
+            return 0
         if self.ui:
             self.ui.loop()
-        # breaks proc
         return 0
 
     def runCommand(self, cmd):
         exec(cmd, globals(), locals())
         return 0
 
-    def cont(self): _dbox.cont()
+    def cont(self, callback=None, **kwargs):
+        self.addCallback(callback, kwargs)
+        _dbox.cont()
 
-    def next(self): _dbox.next()
+    def next(self, callback=None, **kwargs):
+        self.addCallback(callback, kwargs)
+        _dbox.next()
 
-    def step(self): _dbox.step()
+    def step(self, callback=None, **kwargs):
+        self.addCallback(callback, kwargs)
+        _dbox.step()
+
+    def addCallback(self, callback, params=None):
+        if not callback:
+            return
+        self.callbacks[callback] = params
 
     def exit(self): _dbox.exit()
 
-    def mem(self, addr=None, size=100):
+    def mem(self, addr=None, size=256):
         if addr is None:
-            addr = [var('dx'), var('ds')]
-        return _dbox.memory(tolinear(addr), size)
+            addr = "ds:dx"
+        return _dbox.memory(self.ctx.linear(addr), size)
 
     def disasm(self, addr=None, size=10):
         if self.dasm is None:
             raise Exception("Disassembler not inited")
         if addr is None:
-            addr = [var('ip'), var('cs')]
-        return self.dasm.disasm(tolinear(addr), size, var('eip'))
+            addr = "cs:ip"
+        return self.dasm.disasm(self.ctx.linear(addr), size, self.ctx.eip)
 
-    def __getattr__(self, attr): return var(attr)
+    def __getattr__(self, attr): return self.ctx.eval(attr)

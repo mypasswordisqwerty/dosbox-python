@@ -207,7 +207,7 @@ bool CBreakpoint::CheckIntBreakpoint(PhysPt adr, Bit8u intNr, Bit16u ahValue)
     return false;
 };
 
-bool CBreakpoint::CheckExecBreakpoint(Bit16u seg, Bit32u off) {
+bool CBreakpoint::CheckExecBreakpoint(Bit16u seg, Bit32u off, Bit16u pspseg) {
     std::list<CBreakpoint*>::iterator i;
     CBreakpoint* bp;
     for(i=BPoints.begin(); i != BPoints.end(); i++) {
@@ -216,6 +216,7 @@ bool CBreakpoint::CheckExecBreakpoint(Bit16u seg, Bit32u off) {
                 // Found
                 bp->segment = seg;
                 bp->offset = off;
+                bp->ahValue = pspseg;
                 bp->Run();
                 if (bp->GetOnce()) {
                     // delete it, if it should only be used once

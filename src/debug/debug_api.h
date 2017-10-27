@@ -34,9 +34,6 @@ char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &sz);
 
 // -- pyscripting.cpp
 
-std::string python_getscriptdir();
-int python_loadscripts(std::string path);
-
 PyObject* python_mcbs();
 void python_getvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);
 void python_setvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);

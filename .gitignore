@@ -1,5 +1,6 @@
 .*
-Makefile*
+Makefile
+Makefile.in
 aclocal.m4
 *.cache
 /config.*
@@ -14,4 +15,7 @@ xcuserdata
 *.xcworkspace
 *.pyc
 *.sublime*
+*.o
+*.a
+src/dosbox
 

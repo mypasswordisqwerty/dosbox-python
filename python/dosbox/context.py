@@ -67,6 +67,8 @@ class Context:
                 expr = '0x'+expr[:-1]
         return eval(expr, globals(), self)
 
+    def value(self, str): return self.eval(str)
+
     def addr(self, addr):
         addr = self.eval(addr)
         if not isinstance(addr, (tuple, list)):

@@ -10,7 +10,6 @@ class PureUI(UI):
 
     def __init__(self):
         UI.__init__(self)
-        # Dosbox().loadPlugins(globals())
         readline.parse_and_bind("tab: complete")
         histfile = os.path.expanduser("~/.dosbox_hist")
         try:
@@ -27,8 +26,6 @@ class PureUI(UI):
         try:
             ii = code.InteractiveInterpreter(globals())
             s = raw_input(">>> ")
-            if s in ["exit", "quit", "q"]:
-                raise SystemExit()
             while ii.runsource(s):
                 s += "\n" + raw_input("... ")
         except SystemExit:

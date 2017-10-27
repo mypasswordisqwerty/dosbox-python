@@ -1,14 +1,25 @@
 from dosbox import Disasm
+from dosbox.context import Context
 import _dbox
 
 
 class DosboxDisasm(Disasm):
 
-    def disasm(self, loc, size, eip):
+    def __init__(self):
+        Disasm.__init__(self)
+        self.ctx = Context()
+
+    def single(self, addr="cs:ip"):
+        return _dbox.disasm(self.ctx.linear(addr), self.ctx.eip)
+
+    def disasm(self, addr, count, eip):
         ret = ''
-        for i in range(size):
+        loc = self.ctx.linear(addr)
+        lseg = (loc-eip)
+        seg = lseg >> 4
+        for i in range(count):
             l = _dbox.disasm(loc, eip)
-            ret += "\n" + l[0]
+            ret += "\n{:04X}:{:04X}\t{}".format(seg, loc-lseg, l[0])
             loc += l[1]
         return ret[1:]
 

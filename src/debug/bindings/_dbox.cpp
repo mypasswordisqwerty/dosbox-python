@@ -528,7 +528,7 @@ static CYTHON_INLINE float __PYX_NAN() {
 #define __PYX_HAVE_API___dbox
 #include "dosbox.h"
 #include "paging.h"
-#include "debug_api.h"
+#include "../debug_api.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */

@@ -7,6 +7,7 @@
 //
 
 #include "dosbox.h"
+#if C_DEBUG
 #include "debug.hpp"
 #include "debug_api.h"
 
@@ -83,7 +84,9 @@ CBreakpoint* CBreakpoint::AddExecBreakpoint(bool once)
 };
 
 void CBreakpoint::Run(){
+#ifdef C_DEBUG_SCRIPTING
     PYTHON_Break(this);
+#endif
 }
 
 void CBreakpoint::ActivateBreakpoints(PhysPt adr, bool activate)
@@ -338,3 +341,4 @@ void CBreakpoint::ShowList(void)
     }
 };
 
+#endif

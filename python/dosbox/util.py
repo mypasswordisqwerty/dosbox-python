@@ -1,6 +1,11 @@
 
 import dosbox
+import binascii
 from context import Context
+try:
+    from hexdump import hexdump as HD
+except:
+    HD = None
 
 
 def readString(addr="ds:dx", end='\x00', maxsize=256):
@@ -19,3 +24,10 @@ def parseFlags():
 
 def isCarry():
     return (Context().var('eflags') & 1) != 0
+
+
+def hexdump(data):
+    if HD:
+        HD(data)
+        return
+    binascii.b2a_hex(data)

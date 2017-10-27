@@ -3,11 +3,15 @@ from dosbox.breaks import Breaks
 
 
 class FileTrace:
+    __metaclass__ = Singleton
+
+    def __create__(self,):
+        self.handles = {}
+        self._d = Dosbox()
+        self.on = False
 
     def __init__(self, fname=None, nonstop=None, dump=False):
         self.fname = fname
-        self.handles = {}
-        self._d = Dosbox()
         self.nonstop = nonstop
         self.dump = dump
 
@@ -47,8 +51,21 @@ class FileTrace:
         if not h in self.handles:
             return True
         act = "read" if kwargs.get('value') == 0x3F else "write"
+        sz = self._d.cx
+        buf = (self._d.ds << 4) + self._d.dx
         self.log("file "+act, h)
-        return self.nonstop
+        def readed(**kwargs):
+            rd = self._d.ax
+            if isCarry():
+                self.log("file {} {} failed: {:04X}".format(act, sz, rd), h)
+                return self.nonstop
+            self.handles[h][1] += rd
+            self.log("file {} {} of {}".format(act, rd, sz), h)
+            if self.dump:
+                hexdump(self._d.mem(buf, rd))
+            return self.nonstop
+        self._d.next(readed)
+        return True
 
     def fseek(self, **kwargs):
         h = self._d.bx
@@ -58,7 +75,7 @@ class FileTrace:
         pos = self._d.al
         def seeked(**kwargs):
             if isCarry():
-                self.log("file seek failed {} from {}".format(ln, pos), h)
+                self.log("file seek failed {} from {}: {:04X}".format(ln, pos, self._d.ax), h)
                 return self.nonstop
             npos = (self._d.dx << 16) + self._d.ax
             self.handles[h][1] = npos
@@ -75,6 +92,8 @@ class FileTrace:
         return self.nonstop
 
     def run(self):
+        if self.on:
+            return
         b = Breaks()
         b.add("dos_fcreate", self.fopen)
         b.add("dos_fopen", self.fopen)
@@ -83,6 +102,7 @@ class FileTrace:
         b.add("dos_fwrite", self.frw)
         b.add("dos_fseek", self.fseek)
         b.add("dos_unlink", self.unlink)
+        self.on = True
 
     def clear(self):
         b = Breaks()
@@ -93,6 +113,7 @@ class FileTrace:
         b.delete("dos_fwrite")
         b.delete("dos_fseek")
         b.delete("dos_unlink")
+        self.on = False
 
 
 def nofiletrace():
@@ -101,4 +122,4 @@ def nofiletrace():
 
 def filetrace(fname=None, nonstop=False, dump=False):
     nofiletrace()
-    return FileTrace(fname, nonstop).run()
+    return FileTrace(fname, nonstop, dump).run()

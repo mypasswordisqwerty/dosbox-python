@@ -49,6 +49,7 @@ using namespace std;
 #include "../cpu/lazyflags.h"
 #include "keyboard.h"
 #include "setup.h"
+#include "debug.hpp"
 
 #ifdef WIN32
 void WIN32_Console();
@@ -379,9 +380,11 @@ static void DrawRegisters(void) {
 };
 
 static void DrawCode(void) {
+#ifdef C_DEBUG_SCRIPTING
     if (!PYTHON_IsDosboxUI()){
         return;
     }
+#endif
 	bool saveSel; 
 	Bit32u disEIP = codeViewData.useEIP;
 	PhysPt start  = GetAddress(codeViewData.useCS,codeViewData.useEIP);
@@ -1392,11 +1395,13 @@ Bitu DEBUG_Loop(void) {
 		DOSBOX_SetNormalLoop();
 		return 0;
 	}
+#ifdef C_DEBUG_SCRIPTING
     bool dosboxUI = false;
     Bitu ret = PYTHON_Loop(dosboxUI);
     if (!dosboxUI || ret!=0){
         return ret;
     }
+#endif
 	return DEBUG_CheckKeys();
 }
 
@@ -1416,9 +1421,11 @@ void DEBUG_Enable(bool pressed) {
 }
 
 void DEBUG_DrawScreen(void) {
+#ifdef C_DEBUG_SCRIPTING
     if (!PYTHON_IsDosboxUI()){
         return;
     }
+#endif
 	DrawData();
 	DrawCode();
 	DrawRegisters();

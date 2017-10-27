@@ -10,7 +10,7 @@ cdef extern from "dosbox.h":
     ctypedef Bit64u Bitu
 
 
-cdef extern from "debug.hpp":
+cdef extern from "../debug.hpp":
     ctypedef enum EBreakpoint:
         BKPNT_UNKNOWN, BKPNT_PHYSICAL, BKPNT_INTERRUPT, BKPNT_MEMORY, BKPNT_MEMORY_PROT, BKPNT_MEMORY_LINEAR, BKPNT_EXEC
     cdef cppclass CBreakpoint:
@@ -55,7 +55,7 @@ cdef extern from "debug.hpp":
         @staticmethod
         void ShowList()
 
-cdef extern from "debug.hpp" namespace "CBreakpoint":
+cdef extern from "../debug.hpp" namespace "CBreakpoint":
     list[CBreakpoint * ] BPoints
 
 

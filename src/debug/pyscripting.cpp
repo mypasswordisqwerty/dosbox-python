@@ -1,4 +1,5 @@
 #include "dosbox.h"
+#ifdef C_DEBUG_SCRIPTING
 #include <Python.h>
 #include <string.h>
 #include "vga.h"
@@ -196,6 +197,8 @@ void DEBUG_ShowMsg(char const* format,...){
     va_end(msg);
 }
 
+const char* getpchar(string&s){return s.c_str();}
+
 void PYTHON_Init(Section* sec){
     sec->AddDestroyFunction(&PYTHON_ShutDown);
     Section_prop * sect=static_cast<Section_prop *>(sec);
@@ -216,7 +219,7 @@ void PYTHON_Init(Section* sec){
     }
 
     vector<const char*> argv;
-    std::transform(args.begin(), args.end(), back_inserter(argv), [](string& s){ return s.c_str(); });
+    std::transform(args.begin(), args.end(), back_inserter(argv), &getpchar);
     PySys_SetArgv((int)argv.size(), (char**)argv.data());
 
     //plugins path
@@ -241,4 +244,4 @@ void PYTHON_Init(Section* sec){
 }
 
 
-
+#endif

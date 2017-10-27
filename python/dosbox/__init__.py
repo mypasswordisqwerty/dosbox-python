@@ -23,6 +23,7 @@ class Dosbox(object):
     def __create__(self):
         self.ui = None
         self.dasm = None
+        self.server = None
         self.callbacks = {}
         self.ctx = Context()
         try:
@@ -32,6 +33,9 @@ class Dosbox(object):
             parser.add_argument('--loglevel', default="info")
             parser.add_argument('--ui', default="dosbox")
             parser.add_argument('--dasm', default="dosbox")
+            parser.add_argument('--server', default="")
+            parser.add_argument('--host', default="")
+            parser.add_argument('--port', default="1234")
             args = parser.parse_args()
 
             self.path = args.path
@@ -52,6 +56,14 @@ class Dosbox(object):
             if not dasm.startswith("disasm."):
                 dasm = "disasm." + dasm
             sys.modules[dasm] = importlib.import_module(dasm)
+
+            srv = args.server
+            if srv:
+                if not srv.startswith("server."):
+                    srv = "server." + srv
+                self.host = args.host
+                self.port = args.port
+                sys.modules[srv] = importlib.import_module(srv)
 
             if self.ui is None:
                 sys.stdout = sys.stderr = _dbox.CDosboxLog()
@@ -114,11 +126,11 @@ class Dosbox(object):
             addr = "ds:dx"
         return _dbox.memory(self.ctx.linear(addr), size)
 
-    def disasm(self, addr=None, size=10):
+    def disasm(self, addr=None, count=10):
         if self.dasm is None:
             raise Exception("Disassembler not inited")
         if addr is None:
             addr = "cs:ip"
-        return self.dasm.disasm(self.ctx.linear(addr), size, self.ctx.eip)
+        return self.dasm.disasm(addr, count, self.ctx.eip)
 
     def __getattr__(self, attr): return self.ctx.eval(attr)

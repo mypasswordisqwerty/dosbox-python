@@ -375,15 +375,25 @@ void DOSBOX_Init(void) {
 #ifdef C_DEBUG_SCRIPTING
     secprop=control->AddSection_prop("python", &PYTHON_Init);
     Pstring = secprop->Add_path("path", Property::Changeable::OnlyAtStart, "");
-    Pstring->Set_help("Directory for python scripts.");
+    Pstring->Set_help("Path to dosbox-python/python directory.");
     const char* loglevels[] = { "debug", "info", "warning", "error", 0 };
     Pstring = secprop->Add_string("loglevel", Property::Changeable::OnlyAtStart, "info");
     Pstring->Set_values(loglevels);
     Pstring->Set_help("Python log level.");
     Pstring = secprop->Add_string("ui", Property::Changeable::OnlyAtStart, "dosbox");
-    Pstring->Set_help("Debugger UI module.");
+    Pstring->Set_help("Debugger UI module.\n"
+                      "  'dosbox' for internal dosbox ui\n"
+                      "  or name of python module from python/ui directory (pure, gdblike, ...).");
     Pstring = secprop->Add_string("dasm", Property::Changeable::OnlyAtStart, "dosbox");
-    Pstring->Set_help("Debugger disassembler module.");
+    Pstring->Set_help("Debugger disassembler module.\n"
+                      "  name of python module from python/disasm directory.\n"
+                      "  'dosbox' for dosbox diassembler (located at python/disasm/internal.py so 'internal' is the same).");
+    Pstring = secprop->Add_string("server", Property::Changeable::OnlyAtStart, "gdb");
+    Pstring->Set_help("Debugger server module (python/server).");
+    Pstring = secprop->Add_string("host", Property::Changeable::OnlyAtStart, "");
+    Pstring->Set_help("Server bind address.");
+    Pstring = secprop->Add_string("port", Property::Changeable::OnlyAtStart, "1234");
+    Pstring->Set_help("Server port.");
 #endif
 
 

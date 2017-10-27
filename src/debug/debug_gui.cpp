@@ -50,6 +50,14 @@ static FILE* debuglog;
 
 int old_cursor_state;
 
+#ifndef C_DEBUG_SCRIPTING
+void DEBUG_ShowMsg(char const* format,...){
+    va_list msg;
+    va_start(msg, format);
+    DEBUG_ShowMsgV(format, msg);
+    va_end(msg);
+}
+#endif
 
 
 void DEBUG_ShowMsgV(char const* format, va_list msg) {

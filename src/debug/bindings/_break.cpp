@@ -532,7 +532,7 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include "stdexcept"
 #include "typeinfo"
 #include "dosbox.h"
-#include "debug.hpp"
+#include "../debug.hpp"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */

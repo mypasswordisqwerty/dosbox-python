@@ -44,7 +44,7 @@ class Program:
             dosbox.Dosbox().cs
         except:
             return None
-        prg = loadedProgs()
+        prg = dosbox.loadedProgs()
         for x in prg:
             if not prg[x]:
                 continue

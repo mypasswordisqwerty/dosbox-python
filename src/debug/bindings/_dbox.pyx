@@ -1,3 +1,5 @@
+from libcpp.list cimport list
+
 cdef extern from "dosbox.h":
     ctypedef enum SegNames:
         es = 0, cs, ss, ds, fs, gs
@@ -12,6 +14,9 @@ cdef extern from "dosbox.h":
     cdef unsigned int reg_ebp
     cdef unsigned int reg_eip
     cdef unsigned long reg_flags
+    cdef struct DOS_Block:
+        unsigned short firstMCB
+    cdef DOS_Block dos
 
 cdef extern from "paging.h":
     int mem_readb_checked(unsigned int address, unsigned char * val)
@@ -100,3 +105,7 @@ def disasm(int loc, int eip):
     cdef int sz = 0
     val = PYTHON_Dasm(loc, eip, sz)
     return (val, sz)
+
+
+def firstMCB():
+    return dos.firstMCB

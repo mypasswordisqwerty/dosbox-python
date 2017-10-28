@@ -7,6 +7,7 @@ import logging
 from util import *
 from breaks import *
 from context import *
+from program import *
 
 __version__ = "dosbox v0.1"
 
@@ -120,6 +121,8 @@ class Dosbox(object):
         self.callbacks[callback] = params
 
     def exit(self): _dbox.exit()
+
+    def firstMCB(self): return _dbox.firstMCB()
 
     def mem(self, addr=None, size=256):
         if addr is None:

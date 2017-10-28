@@ -20,52 +20,6 @@ char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &size)
 	return dasmstr;
 }
 
-
-PyObject*
-python_mcbs()
-{
-//	std::vector<int> addrs;
-	PyObject *dict = PyDict_New();
-	Bit16u mcb_segment = dos.firstMCB;
-	DOS_MCB mcb(mcb_segment);
-	char filename[9]; // basename=8+NUL
-	while (true) {
-		// verify that the type field is valid
-		if (mcb.GetType()!=0x4d && mcb.GetType()!=0x5a) {
-      LOG(LOG_MISC,LOG_ERROR)("MCB chain broken at %04X:0000!",mcb_segment);
-		}
-
-		mcb.GetFileName(filename);
-		switch (mcb.GetPSPSeg()) {
-			case MCB_FREE:
-			case MCB_DOS:
-				break;
-			default:
-                break;
-				// get memory blocks reserved by the running binary
-                /*
-				if(strlen(filename) > 0 && strncasecmp(exec_filename, filename, strlen(filename)) == 0) {
-					PyDict_SetItem(dict, Py_BuildValue("i",mcb_segment), 
-							Py_BuildValue("i",mcb.GetSize() << 4));
-				} else {
-					DEBUG_ShowMsg("%s != %s", exec_filename, filename);
-				}
-                 */
-		}
-		
-    // if we've just processed the last MCB in the chain, break out of the loop
-    if (mcb.GetType()==0x5a) {
-      break;
-    }
-    // else, move to the next MCB in the chain
-    mcb_segment+=mcb.GetSize()+1;
-    mcb.SetPt(mcb_segment);
-  }
-  
-  return dict;
-  //return Py_BuildValue("{i:i}", &addrs[0]
-}
-
 void
 python_setmemory(Bitu loc, std::string *mem)
 {

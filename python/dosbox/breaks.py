@@ -89,6 +89,6 @@ class Breaks:
 
     def delExec(self):
         for i, b in enumerate(self.getlist()):
-            if b.NAMES[b.GetType] == "EXEC":
+            if b.NAMES[b.GetType()] == "EXEC":
                 self.delIndex(i)
                 return

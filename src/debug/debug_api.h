@@ -31,10 +31,8 @@ Bitu PYTHON_Loop(bool& dosboxUI);
 bool PYTHON_Command(const char *cmd);
 bool PYTHON_Break(CBreakpoint *bp);
 char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &sz);
-
 // -- pyscripting.cpp
 
-PyObject* python_mcbs();
 void python_getvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);
 void python_setvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);
 void python_getpalette(std::string *pal);

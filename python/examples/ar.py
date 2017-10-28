@@ -10,6 +10,8 @@ class Ar(Program):
 
     def loaded(self):
         print "AR loaded at "+hex(self.base)
+        Breaks().add("FREAD_START")
+        Dosbox().cont()
 
 
 prog = Ar()

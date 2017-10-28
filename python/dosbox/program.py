@@ -1,5 +1,7 @@
-from dosbox import *
+import dosbox
 import logging
+import breaks
+import context
 
 logger = logging.getLogger("dosbox.program")
 
@@ -14,29 +16,34 @@ class Program:
         self.base = None
         if self.psp:
             if self._prepare():
-                Dosbox().cont()
+                dosbox.Dosbox().cont()
         else:
-            Breaks().addExec(callback=self._onExec)
+            breaks.Breaks().addExec(callback=self._onExec)
 
     def _onExec(self, **kwargs):
         psp = kwargs.get('value')
-        nm = readEnv(psp, True)
+        nm = dosbox.readEnv(psp, True)
         logger.debug("check exec %s", nm)
         if nm.lower().endswith(self.fname):
             self.psp = psp
-            Breaks().delExec()
-            return self._prepare()
+            breaks.Breaks().delExec()
+            self._prepare()
         else:
-            return True
+            dosbox.Dosbox().cont()
 
     def _prepare(self):
         self.base = self.psp+0x10
         if self.symbols:
             logger.debug("loading symbols from %s at %04X", self.symbols, self.base)
-            Context().loadSymbols(self.symbols, self.base)
-        return self.loaded()
+            context.Context().loadSymbols(self.symbols, self.base)
+        self.loaded()
 
     def _checkLoaded(self):
+        try:
+            # check dosbox loaded/we are not plugin
+            dosbox.Dosbox().cs
+        except:
+            return None
         prg = loadedProgs()
         for x in prg:
             if not prg[x]:
@@ -48,4 +55,3 @@ class Program:
     def loaded(self):
         """ called on program load"""
         logger.info("Program %s loaded at %04X", self.fname, self.base)
-        return False

@@ -15,6 +15,7 @@ class Context:
 
     def __create__(self):
         self._vars = {}
+        self._names = {}
         self.path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
         self.loadSymbols(os.path.join(self.path, "data", "dos_sym.json"))
 
@@ -39,6 +40,8 @@ class Context:
             if isinstance(val, dict):
                 val = {k: self.eval(v) for k, v in val.iteritems()}
             self.setVar(x, val)
+            if isinstance(val, (tuple, list)):
+                self._names[self.linear(val)] = x
 
     def var(self, name):
         if name in self._vars:
@@ -50,6 +53,12 @@ class Context:
             return v & 0xFF if name[1] == 'l' else (v >> 8) & 0xFF
         v = binascii.unhexlify(name)
         return struct.unpack(_FMTS[len(v)], v)[0]
+
+    def name(self, addr, label=True):
+        nm = self._names.get(self.linear(addr)) or ''
+        if label and len(nm) > 0:
+            nm += ":\n"
+        return nm
 
     def __getattr__(self, attr):
         return self.var(attr)

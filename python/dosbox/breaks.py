@@ -38,17 +38,17 @@ class Breaks:
             self.callbacks[brk.GetId()] = callback
         return brk
 
-    def addAddr(seg, ofs, allback=None, once=False):
-        return Breaks()._addBreak(_break.AddBreakpoint(seg, ofs, once), callback)
+    def addAddr(self, seg, ofs, callback=None, once=False):
+        return self._addBreak(_break.AddBreakpoint(seg, ofs, once), callback)
 
     def addInt(self, intNr, ah=None, callback=None, once=False):
-        return Breaks()._addBreak(_break.AddIntBreakpoint(intNr, ah or 0, once), callback)
+        return self._addBreak(_break.AddIntBreakpoint(intNr, ah or 0, once), callback)
 
     def addMem(self, seg, ofs, callback=None):
-        return Breaks()._addBreak(_break.AddMemBreakpoint(seg, ofs), callback)
+        return self._addBreak(_break.AddMemBreakpoint(seg, ofs), callback)
 
     def addExec(self, callback=None, once=False):
-        return Breaks()._addBreak(_break.AddExecBreakpoint(once), callback)
+        return self._addBreak(_break.AddExecBreakpoint(once), callback)
 
     def add(self, sym, callback=None, once=False):
         addr = self.ctx.eval(sym)

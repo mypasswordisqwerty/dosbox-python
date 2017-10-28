@@ -17,6 +17,7 @@ logger = logging.getLogger("dosbox")
 
 class Dosbox(object):
     __metaclass__ = Singleton
+    RET_OPCODES = [0xC3, 0xCB, 0xC2, 0xCA, 0xCF]
 
     def __init__(self):
         pass
@@ -27,6 +28,7 @@ class Dosbox(object):
         self.server = None
         self.callbacks = {}
         self.ctx = Context()
+        self.unhang = 0
         try:
             sys.path.append(os.getcwd())
             parser = argparse.ArgumentParser()
@@ -81,21 +83,19 @@ class Dosbox(object):
                 glob[x[:-3]] = __import__(x[:-3])
 
     def loop(self):
+        self.unhang += 1
         self.ctx.updateRegs(_dbox.regs())
-        cont = False
+        showui = len(self.callbacks) == 0 or self.unhang > 1000
         torun = self.callbacks
         self.callbacks = {}
         try:
             for x in torun:
-                if x(**torun[x]) == True:
-                    cont = True
+                x(**torun[x])
         except Exception as e:
             logger.error(str(e), exc_info=1)
-            cont = False
-        if cont:
-            self.cont()
-            return 0
-        if self.ui:
+            showui = True
+        if showui and self.ui:
+            self.unhang = 0
             self.ui.loop()
         return 0
 
@@ -114,6 +114,25 @@ class Dosbox(object):
     def step(self, callback=None, **kwargs):
         self.addCallback(callback, kwargs)
         _dbox.step()
+
+    def until(self, callback=None, **kwargs):
+        self.addCallback(callback, kwargs)
+        l = self.dasm.single()
+        Breaks().add("cs:ip+"+str(l[1]), once=True)
+        self.cont()
+
+    def finish(self, makeRet=True, callback=None, **kwargs):
+        self.next(self._checkRet, makeRet=True, cb=callback, args=kwargs)
+
+    def _checkRet(self, makeRet, cb, args):
+        op = ord(self.mem("cs:ip", 1)[0])
+        if op not in self.RET_OPCODES:
+            self.next(self._checkRet, makeRet=makeRet, cb=cb, args=args)
+            return
+        if makeRet:
+            self.step(cb, **args)
+        else:
+            self.addCallback(cb, args)
 
     def addCallback(self, callback, params=None):
         if not callback:

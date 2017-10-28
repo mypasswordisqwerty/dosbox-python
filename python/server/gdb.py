@@ -8,7 +8,7 @@ class GdbServer(Server):
     def start(self, host, port):
         logger.debug("start")
 
-    def stop(self, host, port):
+    def stop(self):
         logger.debug("stop")
 
 currentServer = GdbServer()

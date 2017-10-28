@@ -27,7 +27,7 @@ def isCarry():
     return (Context().var('eflags') & 1) != 0
 
 
-def hexdump(data):
+def hexdump(data, ofs=0):
     if HD:
         HD(data)
         return

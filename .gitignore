@@ -18,4 +18,8 @@ xcuserdata
 *.o
 *.a
 src/dosbox
-
+bin/
+Debug/
+Release/
+*.user
+*.VC.*

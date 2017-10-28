@@ -33,6 +33,7 @@ bool PYTHON_Break(CBreakpoint *bp);
 char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &sz);
 // -- pyscripting.cpp
 
+/*
 void python_getvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);
 void python_setvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::string *mem);
 void python_getpalette(std::string *pal);
@@ -40,6 +41,6 @@ void python_setpalette(std::string *pal);
 int python_vgamode();
 std::list<CDebugVar> python_vars();
 void python_insertvar(char *name, Bit32u addr);
-
+*/
 #endif
 #endif

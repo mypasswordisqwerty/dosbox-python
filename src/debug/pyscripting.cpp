@@ -11,6 +11,9 @@
 #include "bindings/_dbox.h"
 #include "bindings/_break.h"
 
+#include <algorithm>
+#include <iterator>
+
 bool dosboxUI = false;
 
 char dasmstr[200];
@@ -20,6 +23,7 @@ char* PYTHON_Dasm(PhysPt ptr, Bitu eip, int &size)
 	return dasmstr;
 }
 
+/*
 void
 python_setmemory(Bitu loc, std::string *mem)
 {
@@ -52,7 +56,6 @@ python_setvidmemory(Bit16u x, Bit16u y, Bit16u w, Bit16u h, Bit8u page, std::str
 		INT10_PutPixel(x+(i%w), y+(i/w), page, buf[i]);
 	}
 }
-
 void 
 python_getpalette(std::string *pal)
 {
@@ -86,6 +89,7 @@ python_setpalette(std::string *pal)
 }
 
 int python_vgamode() { return CurMode->mode; }
+*/
 
 void
 python_insertvar(char *name, Bit32u addr)

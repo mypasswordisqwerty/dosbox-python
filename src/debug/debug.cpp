@@ -27,6 +27,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 #include "debug_api.h"

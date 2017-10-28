@@ -26,6 +26,14 @@
 #define min(a,b) ((a)<(b)?(a):(b))
 #endif
 
+#ifndef __iob_func
+FILE _iob[] = { *stdin, *stdout, *stderr };
+extern "C" FILE * __cdecl __iob_func(void)
+{
+	return _iob;
+}
+#endif
+
 /* 
 	Have to remember where i ripped this code sometime ago.
 

@@ -374,7 +374,7 @@ void DOSBOX_Init(void) {
 
 #ifdef C_DEBUG_SCRIPTING
     secprop=control->AddSection_prop("python", &PYTHON_Init);
-    Pstring = secprop->Add_path("path", Property::Changeable::OnlyAtStart, "");
+    Pstring = secprop->Add_path("path", Property::Changeable::OnlyAtStart, "python");
     Pstring->Set_help("Path to dosbox-python/python directory.");
     const char* loglevels[] = { "debug", "info", "warning", "error", 0 };
     Pstring = secprop->Add_string("loglevel", Property::Changeable::OnlyAtStart, "info");

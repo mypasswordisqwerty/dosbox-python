@@ -21,8 +21,10 @@ cdef extern from "dosbox.h":
 cdef extern from "paging.h":
     int mem_readb_checked(unsigned int address, unsigned char * val)
 
-cdef extern from "../debug_api.h":
+cdef extern from "../debug_inc.h":
     cdef void DEBUG_ShowMsg(char * format, char * )
+
+cdef extern from "../debug_api.h":
     cdef void DEBUG_Continue()
     cdef void DEBUG_Next()
     cdef void DEBUG_Step()

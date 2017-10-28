@@ -6,10 +6,10 @@ class Ar(Program):
 
     def __init__(self):
         sym = os.path.join(os.path.dirname(__file__), "ar_sym.json")
-        Program.__init__('ar.exe', sym)
+        Program.__init__(self, "ar.exe", sym)
 
-    def loaded(self, **kwargs):
-        print "AR loaded"
+    def loaded(self):
+        print "AR loaded at "+hex(self.base)
 
 
 prog = Ar()

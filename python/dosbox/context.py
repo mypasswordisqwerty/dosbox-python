@@ -34,7 +34,7 @@ class Context:
         for x in data:
             val = self.eval(data[x])
             if isinstance(val, (tuple, list)):
-                val = [self.eval(x) for x in val]
+                val = [self.eval(y) for y in val]
                 val[0] += segAdd
             if isinstance(val, dict):
                 val = {k: self.eval(v) for k, v in val.iteritems()}
@@ -57,11 +57,19 @@ class Context:
     def __getitem__(self, attr):
         return self.var(attr)
 
+    def tryhex(self, expr):
+        if len(expr) == 4 and expr not in self._vars:
+            try:
+                return int(expr, 16)
+            except:
+                pass
+        return self.eval(expr)
+
     def eval(self, expr):
         if not isinstance(expr, basestring):
             return expr
         if ':' in expr:
-            return [self.eval(x) for x in expr.split(':')]
+            return [self.tryhex(x) for x in expr.split(':')]
         if expr[0].isdigit():
             if expr.endswith('h'):
                 expr = '0x'+expr[:-1]

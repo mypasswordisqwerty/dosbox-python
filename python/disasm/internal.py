@@ -14,9 +14,10 @@ class DosboxDisasm(Disasm):
 
     def disasm(self, addr, count, eip):
         ret = ''
-        loc = self.ctx.linear(addr)
-        lseg = (loc-eip)
-        seg = lseg >> 4
+        ad = self.ctx.addr(addr)
+        seg = ad[0]
+        lseg = ad[0] << 4
+        loc = lseg + ad[1]
         for i in range(count):
             l = _dbox.disasm(loc, eip)
             ret += "\n{:04X}:{:04X}\t{}".format(seg, loc-lseg, l[0])

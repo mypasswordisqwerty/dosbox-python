@@ -33,7 +33,7 @@ class Program:
         self.base = self.psp+0x10
         if self.symbols:
             logger.debug("loading symbols from %s at %04X", self.symbols, self.base)
-            Context().loadSymbols(self.fname, self.base)
+            Context().loadSymbols(self.symbols, self.base)
         return self.loaded()
 
     def _checkLoaded(self):

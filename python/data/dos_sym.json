@@ -6,5 +6,5 @@
 	"dos_fwrite" : {"int":"21h", "ah":"40h"},
 	"dos_unlink" : {"int":"21h", "ah":"41h"},
 	"dos_fseek" : {"int":"21h", "ah":"42h"},
-	"videomem": "A000:0000"
+	"videomem": "A000:0F80"
 }

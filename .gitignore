@@ -23,3 +23,6 @@ Debug/
 Release/
 *.user
 *.VC.*
+python/ar.py
+python/ar_sym.json
+

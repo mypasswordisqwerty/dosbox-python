@@ -20,7 +20,8 @@ class DosboxDisasm(Disasm):
         loc = lseg + ad[1]
         for i in range(count):
             l = _dbox.disasm(loc, eip)
-            ret += "\n{}{:04X}:{:04X}\t{}".format(self.ctx.name(loc), seg, loc-lseg, l[0])
+            cur = '> ' if eip == loc-lseg else ''
+            ret += "\n{}{:04X}:{:04X}\t{}".format(self.ctx.name(loc)+cur, seg, loc-lseg, l[0])
             loc += l[1]
         return ret[1:]
 

@@ -35,6 +35,7 @@ class GdbLike(UI):
         self.DISPLAY = {"instructions": 0, "registers": 0}
         self.INFO = {"registers": self.infoRegs}
         self.inited = False
+        self.nodisp = False
 
     def init(self):
         self.inited = True
@@ -56,18 +57,21 @@ class GdbLike(UI):
         return ret
 
     def printDisplay(self):
+        if self.nodisp:
+            return
         if self.DISPLAY['registers'] > 0:
             self.info("reg")
             print
         if self.DISPLAY['instructions'] > 0:
-            print ">",
             self.disasm(cnt=self.DISPLAY['instructions'])
             print
 
     def cont(self):
+        self.nodisp = False
         Dosbox().cont()
 
     def next(self, cnt=1):
+        self.nodisp = False
         cnt = int(cnt)
         logger.debug("next %d", cnt)
         if cnt > 1:
@@ -76,6 +80,7 @@ class GdbLike(UI):
             Dosbox().next()
 
     def step(self, cnt=1):
+        self.nodisp = False
         cnt = int(cnt)
         logger.debug("next %d", cnt)
         if cnt > 1:
@@ -84,9 +89,11 @@ class GdbLike(UI):
             Dosbox().step()
 
     def until(self):
+        self.nodisp = False
         Dosbox().until()
 
     def finish(self):
+        self.nodisp = False
         Dosbox().finish()
 
     def disasm(self, where="cs:ip", cnt=10):
@@ -125,6 +132,7 @@ class GdbLike(UI):
         raise SystemExit()
 
     def procCmd(self, cmd):
+        self.nodisp = True
         args = cmd.split()
         for x in self.CMDS:
             if x.startswith(args[0]):

@@ -33,13 +33,17 @@ class Context:
         with open(fname) as f:
             data = json.load(f)
         for x in data:
+            # set value by name
             val = self.eval(data[x])
             if isinstance(val, (tuple, list)):
                 val = [self.eval(y) for y in val]
                 val[0] += segAdd
+            if x.startswith("__SEG__"):
+                val += segAdd
             if isinstance(val, dict):
                 val = {k: self.eval(v) for k, v in val.iteritems()}
             self.setVar(x, val)
+            # set name by addr
             if isinstance(val, (tuple, list)):
                 self._names[self.linear(val)] = x
 

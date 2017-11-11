@@ -36,7 +36,6 @@ class Context:
             # set value by name
             val = self.eval(data[x])
             if isinstance(val, (tuple, list)):
-                val = [self.eval(y) for y in val]
                 val[0] += segAdd
             if x.startswith("__SEG__"):
                 val += segAdd
@@ -80,6 +79,8 @@ class Context:
 
     def eval(self, expr):
         if not isinstance(expr, basestring):
+            if isinstance(expr, (tuple, list)):
+                return [self.eval(y) for y in expr]
             return expr
         if ':' in expr:
             return [self.tryhex(x) for x in expr.split(':')]

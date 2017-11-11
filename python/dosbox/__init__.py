@@ -18,6 +18,7 @@ logger = logging.getLogger("dosbox")
 class Dosbox(object):
     __metaclass__ = Singleton
     RET_OPCODES = [0xC3, 0xCB, 0xC2, 0xCA, 0xCF]
+    UNHANG = 100000
 
     def __init__(self):
         pass
@@ -85,7 +86,7 @@ class Dosbox(object):
     def loop(self):
         self.unhang += 1
         self.ctx.updateRegs(_dbox.regs())
-        showui = len(self.callbacks) == 0 or self.unhang > 1000
+        showui = len(self.callbacks) == 0 or self.unhang > self.UNHANG
         torun = self.callbacks
         self.callbacks = {}
         try:

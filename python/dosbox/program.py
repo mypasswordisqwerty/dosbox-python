@@ -2,6 +2,7 @@ import dosbox
 import logging
 import breaks
 import context
+import struct
 
 logger = logging.getLogger("dosbox.program")
 
@@ -63,8 +64,16 @@ class Program:
         """ called on program load"""
         logger.info("Program %s loaded at %04X", self.fname, self.base)
 
+    def rebase(self, addr):
+        ret = self.ctx.addr(addr)
+        ret[0] += self.base
+        return ret
+
     def mem(self, sym, size=256):
         return self.dbox.mem(sym, size)
 
     def dmem(self, ofs, size):
         return self.mem([self.dseg, ofs], size)
+
+    def wvar(self, ofs):
+        return struct.unpack("<H", self.dmem(ofs, 2))[0]

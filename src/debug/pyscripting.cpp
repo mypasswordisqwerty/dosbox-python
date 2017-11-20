@@ -89,13 +89,13 @@ python_setpalette(std::string *pal)
 }
 
 int python_vgamode() { return CurMode->mode; }
-*/
 
 void
 python_insertvar(char *name, Bit32u addr)
 {
 	CDebugVar::InsertVariable(name, addr);
 }
+ */
 
 std::list<CDebugVar>
 python_vars()
@@ -150,7 +150,7 @@ void DEBUG_ShowMsg(char const* format,...){
         DEBUG_ShowMsgV(format, msg);
     }else{
         vprintf(format, msg);
-        //printf("\n");
+        printf("\n");
     }
     va_end(msg);
 }

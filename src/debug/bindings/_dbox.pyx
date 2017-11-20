@@ -17,9 +17,20 @@ cdef extern from "dosbox.h":
     cdef struct DOS_Block:
         unsigned short firstMCB
     cdef DOS_Block dos
+    ctypedef unsigned char Bit8u
+    ctypedef unsigned short Bit16u
+    ctypedef unsigned int Bit32u
+    ctypedef unsigned long long Bit64u
+    ctypedef unsigned int PhysPt
+    ctypedef Bit64u Bitu
 
 cdef extern from "paging.h":
     int mem_readb_checked(unsigned int address, unsigned char * val)
+
+cdef extern from "inout.h":
+    void IO_Write(Bitu port,Bit8u val)
+    Bit8u IO_Read(Bitu port)
+
 
 cdef extern from "../debug_inc.h":
     cdef void DEBUG_ShowMsg(char * format, char * )
@@ -102,6 +113,12 @@ def memory(int loc, int size):
         loc += 1
     return ret
 
+def vgaPalette():
+    IO_Write(0x3c7, 0);
+    ret=''
+    for i in range(256*3):
+        ret += chr(IO_Read(0x3c9))
+    return ret
 
 def disasm(int loc, int eip):
     cdef int sz = 0

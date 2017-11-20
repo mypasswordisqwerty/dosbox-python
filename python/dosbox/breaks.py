@@ -42,7 +42,7 @@ class Breaks:
         return self._addBreak(_break.AddBreakpoint(seg, ofs, once), callback)
 
     def addInt(self, intNr, ah=None, callback=None, once=False):
-        return self._addBreak(_break.AddIntBreakpoint(intNr, ah or 0, once), callback)
+        return self._addBreak(_break.AddIntBreakpoint(intNr, ah or 0x100, once), callback)
 
     def addMem(self, seg, ofs, callback=None):
         return self._addBreak(_break.AddMemBreakpoint(seg, ofs), callback)
